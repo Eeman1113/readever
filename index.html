@@ -15,7 +15,6 @@
   --mono: 'IBM Plex Mono', monospace;
   --body: 'Lora', Georgia, serif;
 
-  /* Kindle PW 11 logical canvas — FIXED dimensions */
   --kw: 758px;
   --kh: 1024px;
 }
@@ -33,16 +32,12 @@ html, body {
   font-family: var(--ui);
   font-size: 16px;
   color: var(--k);
-  overflow: hidden; /* no body scroll at all */
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* ── KINDLE FRAME ──
-   Desktop: fixed 758×1024 box, centred, never scrolls.
-   Mobile (≤800px): full viewport, responsive.
-*/
 .kindle-frame {
   width: var(--kw);
   height: var(--kh);
@@ -51,7 +46,7 @@ html, body {
   box-shadow: 7px 7px 0 var(--k);
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* the frame itself NEVER scrolls */
+  overflow: hidden;
   flex-shrink: 0;
   position: relative;
 }
@@ -60,7 +55,7 @@ html, body {
   html, body { overflow: hidden; }
   .kindle-frame {
     width: 100vw;
-    height: 100dvh; /* dynamic viewport height — respects mobile browser chrome */
+    height: 100dvh;
     border: none;
     box-shadow: none;
   }
@@ -129,7 +124,7 @@ html, body {
 #rs { display:none; }
 #rs.on { display:flex; }
 
-/* ══════════════ SEARCH SCREEN ══════════════ */
+/* ══ SEARCH SCREEN ══ */
 .hero {
   flex: 1;
   display: flex;
@@ -233,14 +228,13 @@ html, body {
 @keyframes bl { 50%{ background:var(--d); } }
 .ld span { font-family:var(--mono); font-size:11px; letter-spacing:.06em; }
 
-/* Results — scrollable within fixed frame */
 .rarea {
   border-top: 3px solid var(--k);
   display: none;
   flex-direction: column;
   overflow-y: auto;
   flex-shrink: 0;
-  max-height: 50%; /* half the frame max */
+  max-height: 50%;
 }
 .rarea.on { display:flex; }
 .rhdr {
@@ -275,9 +269,7 @@ html, body {
 .empty { display:none; border:3px dashed var(--k); margin:14px; padding:20px; text-align:center; font-size:13px; color:var(--g); }
 .empty.on { display:block; }
 
-/* ══════════════ READER SCREEN ══════════════ */
-
-/* Progress bar */
+/* ══ READER SCREEN ══ */
 .prog {
   border-bottom: 3px solid var(--k);
   height: 24px;
@@ -294,7 +286,6 @@ html, body {
   pointer-events:none;
 }
 
-/* Font controls */
 .frow {
   display:flex; gap:6px; align-items:center;
   padding:6px 10px;
@@ -304,22 +295,20 @@ html, body {
 .frow .btn { min-width:50px; min-height:36px; }
 .flbl { font-family:var(--mono); font-size:10px; color:var(--g); margin-right:auto; letter-spacing:.07em; }
 
-/* ── PAGE AREA ──
-   This is the CRITICAL region.
-   It takes all remaining vertical space between the controls bar
-   and the nav bar. NEVER scrolls. Pagination fills it exactly.
+/*
+  PAGE AREA — fills ALL remaining vertical space.
+  NEVER scrolls. This is the hard boundary for text.
 */
 #page-area {
   flex: 1;
-  min-height: 0;        /* critical flex child — allows shrinking below content size */
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;     /* hard clip — no scroll, ever */
+  overflow: hidden;
   position: relative;
   background: var(--w);
 }
 
-/* Loading indicator */
 #bl {
   display: none;
   flex: 1;
@@ -333,19 +322,20 @@ html, body {
 #bl.on { display: flex; }
 
 /*
-  #bt — The rendered page of text.
-  overflow: hidden — text that doesn't fit is invisible (clipped),
-  never scrolled. The pagination engine ensures content NEVER exceeds
-  the available height, so clipping is only a safety net.
+  #bt — rendered page of text.
+  overflow: hidden — hard clip, NEVER scrolls.
+  The pagination engine guarantees content never exceeds this height.
+  padding must exactly match PAD_H / PAD_V constants in JS below.
 */
 #bt {
   font-family: var(--body);
   font-size: 1.0rem;
   line-height: 1.85;
+  /* IMPORTANT: these padding values are mirrored in JS as PAD_H / PAD_V */
   padding: 18px 22px;
   flex: 1;
   min-height: 0;
-  overflow: hidden;     /* HARD CLIP — never scroll */
+  overflow: hidden;
   display: none;
   background: var(--w);
   color: var(--k);
@@ -353,7 +343,6 @@ html, body {
   overflow-wrap: break-word;
 }
 
-/* Chapter heading inside text */
 .ch {
   display: block;
   font-family: var(--ui);
@@ -368,7 +357,6 @@ html, body {
   margin: 14px 0 10px;
 }
 
-/* Nav bar — always at the bottom of the frame */
 .nav {
   border-top: 3px solid var(--k);
   padding: 8px 10px;
@@ -437,7 +425,6 @@ html, body {
       <button class="btn" id="fu">A+</button>
     </div>
 
-    <!-- ── PAGE AREA: fills ALL remaining space, never scrolls ── -->
     <div id="page-area">
       <div id="bl" class="on">[ Loading... ]</div>
       <div id="bt"></div>
@@ -450,7 +437,7 @@ html, body {
     </div>
   </div>
 
-</div><!-- /.kindle-frame -->
+</div>
 
 <script>
 'use strict';
@@ -458,7 +445,11 @@ html, body {
 const API = 'https://gutendex.com/books/';
 const PRX = 'https://corsproxy.io/?';
 
-// ── DOM refs ──
+// Mirror these exactly from CSS #bt padding:
+const PAD_H = 22; // left + right each
+const PAD_V = 18; // top + bottom each
+const PARA_MB_EM = 0.7; // margin-bottom on each paragraph div
+
 const $ = id => document.getElementById(id);
 const ss=$('ss'), rs=$('rs'), si=$('si'), sug=$('sug'),
       smsg=$('smsg'), ld=$('ld'), rl=$('rl'), ra=$('ra'),
@@ -466,12 +457,11 @@ const ss=$('ss'), rs=$('rs'), si=$('si'), sug=$('sug'),
       bt=$('bt'), pf=$('pf'), pp=$('pp'), pi=$('pi'),
       pv=$('pv'), nx=$('nx'), pageArea=$('page-area');
 
-// ── State ──
 let debT = null;
-let allParagraphs = [];   // array of HTML strings
-let pages = [];           // array of {start, end} paragraph index ranges
+let allParagraphs = [];
+let pages = [];
 let cur = 0;
-let fs = 1.0;             // rem multiplier
+let fs = 1.0;
 let paginating = false;
 
 // ═══════════════════════════════════════════════
@@ -538,7 +528,6 @@ async function search() {
 // ═══════════════════════════════════════════════
 
 async function openBook(b) {
-  // Reset state
   bt.innerHTML = '';
   bt.style.display = 'none';
   bl.classList.add('on');
@@ -547,7 +536,6 @@ async function openBook(b) {
   pi.textContent = '— / —';
   pf.style.width = '0%'; pp.textContent = '0%';
 
-  // Switch to reader screen
   ss.classList.add('off');
   rs.classList.add('on');
 
@@ -556,7 +544,6 @@ async function openBook(b) {
 
   try {
     let txt = null;
-    // Try direct first, then via CORS proxy
     try {
       const r = await fetch(url, { mode: 'cors' });
       if (r.ok) txt = await r.text();
@@ -582,20 +569,18 @@ function bestUrl(f) {
 }
 
 // ═══════════════════════════════════════════════
-// TEXT PROCESSING  →  paragraph array
+// TEXT PROCESSING
 // ═══════════════════════════════════════════════
 
 function processText(raw) {
   let t = raw;
 
-  // Strip Gutenberg header/footer
   const s = t.search(/\*{3}\s*START OF (THE|THIS) PROJECT GUTENBERG/i);
   if (s !== -1) t = t.slice(t.indexOf('\n', s) + 1);
   const en = t.search(/\*{3}\s*END OF (THE|THIS) PROJECT GUTENBERG/i);
   if (en !== -1) t = t.slice(0, en);
   t = t.trim();
 
-  // Split on blank lines → logical paragraphs
   const rawParas = t.split(/\n{2,}/);
 
   allParagraphs = rawParas.map(p => {
@@ -607,16 +592,13 @@ function processText(raw) {
       (trimmed.length < 70 && trimmed === trimmed.toUpperCase() && /[A-Z]{3}/.test(trimmed));
 
     if (isHeading) return `<span class="ch">${esc(trimmed)}</span>`;
-
-    // Preserve mid-paragraph line breaks as single space (prose reflow)
     return esc(trimmed).replace(/\n/g, ' ');
   }).filter(Boolean);
 
   bl.classList.remove('on');
   bt.style.display = 'block';
 
-  // Wait for the reader screen to fully paint before measuring.
-  // We poll until pageArea has a real height (handles slow paints & font loads).
+  // Wait for layout to settle before paginating
   waitForLayout(() => paginate(() => render(0)));
 }
 
@@ -624,14 +606,14 @@ function waitForLayout(cb) {
   let tries = 0;
   function check() {
     tries++;
-    // pageArea must have real height AND bt must have real width
-    if (pageArea.offsetHeight > 100 && (bt.offsetWidth || pageArea.offsetWidth) > 100) {
+    const h = pageArea.offsetHeight;
+    const w = bt.offsetWidth || pageArea.offsetWidth;
+    if (h > 80 && w > 80) {
       cb();
-    } else if (tries < 40) {
+    } else if (tries < 60) {
       requestAnimationFrame(check);
     } else {
-      // Timeout fallback — force a measurement anyway
-      cb();
+      cb(); // fallback
     }
   }
   requestAnimationFrame(check);
@@ -641,83 +623,93 @@ function waitForLayout(cb) {
 // PAGINATION ENGINE
 // ═══════════════════════════════════════════════
 /*
-  Strategy:
-  1. Measure the EXACT pixel height available inside #page-area
-     (after subtracting bt's vertical padding).
-  2. Use an off-screen probe element (same styling as #bt) placed
-     inside #page-area so it inherits the correct width.
-  3. Binary-search how many paragraphs fit without exceeding availH.
-  4. Store {start, end} index pairs in `pages[]`.
+  How it works:
+  ─────────────
+  1.  Compute availH = pageArea.offsetHeight − (PAD_V * 2)
+      This is the exact pixel budget for text content inside #bt.
 
-  The probe is absolutely positioned (visibility:hidden, pointer-events:none)
-  so it doesn't affect layout, but DOES inherit the correct computed width
-  from its parent. This is the most accurate approach for variable-width
-  layouts (e.g. mobile responsive).
+  2.  Create a probe <div> that is:
+        • appended as a SIBLING to #bt inside #page-area
+          (so it inherits the exact same computed width as #bt)
+        • position: absolute; top: -9999px → invisible, never affects layout
+        • styled identically to #bt (font, size, line-height, width, padding:0)
+          We strip padding because we measure content height only.
+
+  3.  For each page, binary-search the max number of paragraphs
+      whose rendered height ≤ availH.
+
+  4.  Store {start, end} indices in pages[].
+
+  The probe measures scrollHeight so even non-visible overflow is captured.
+  This guarantees we never under-fill (wasted space) or over-fill (clipped text).
 */
-
 function paginate(done) {
   if (paginating) return;
   paginating = true;
   pages = [];
 
-  // ── Measure the available height ──
-  // pageArea is the flex child that holds #bt.
-  // Its offsetHeight is the pixel budget for text content.
-  // We subtract bt's top+bottom padding (18px × 2 = 36px).
-  const PAD_V = 36;
-  const areaH = pageArea.offsetHeight;
-  const availH = areaH - PAD_V;
+  // ── Available content height ──
+  const areaH  = pageArea.offsetHeight;
+  const availH = areaH - (PAD_V * 2);
 
-  // ── Measure the text column width ──
-  // bt.offsetWidth is reliable once bt is display:block inside a visible parent.
-  const colW = bt.offsetWidth || pageArea.offsetWidth || 714; // 758 - 2×22px padding
+  // ── Text column width (content area only, no padding) ──
+  // bt.clientWidth excludes padding. If not yet rendered, fall back.
+  const colW = (bt.clientWidth > 0 ? bt.clientWidth : bt.offsetWidth - PAD_H * 2) || 714;
 
-  console.log('[paginate] areaH=', areaH, 'availH=', availH, 'colW=', colW);
+  // ── Font metrics from live bt element ──
+  const cs        = getComputedStyle(bt);
+  const fontFamily = cs.fontFamily;
+  const lineHeight = cs.lineHeight; // already computed px value
+  const fontSize   = `${fs}rem`;
 
-  if (availH <= 50 || !allParagraphs.length) {
-    // Something went wrong with measurement — split into fixed-size chunks as fallback
-    console.warn('[paginate] fallback: areaH too small or no paragraphs');
-    const CHUNK = 8;
-    for (let i = 0; i < allParagraphs.length; i += CHUNK) {
+  // ── Paragraph margin in px ──
+  // PARA_MB_EM * fs rem converted to px
+  const rootFontPx  = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const paraMarginPx = PARA_MB_EM * fs * rootFontPx;
+
+  if (availH <= 40 || !allParagraphs.length) {
+    // Fallback: fixed chunk size
+    const CHUNK = 6;
+    for (let i = 0; i < allParagraphs.length; i += CHUNK)
       pages.push({ start: i, end: Math.min(i + CHUNK, allParagraphs.length) });
-    }
     paginating = false;
     done();
     return;
   }
 
-  // ── Build an off-screen probe ──
-  // Appended to document.body so it always has a real layout context.
-  // Position fixed + visibility hidden = invisible but fully laid out.
+  // ── Build probe ──
+  // Absolute inside page-area → inherits correct width, invisible.
   const probe = document.createElement('div');
   probe.setAttribute('aria-hidden', 'true');
-  const computedFont = getComputedStyle(bt).fontFamily || "'Lora', Georgia, serif";
   probe.style.cssText = [
-    'position: fixed',
-    'top: -9999px',
-    'left: -9999px',
-    'visibility: hidden',
-    'pointer-events: none',
-    `width: ${colW}px`,
-    `font-family: ${computedFont}`,
-    `font-size: ${fs}rem`,
-    'line-height: 1.85',
-    'padding: 0',
-    'margin: 0',
-    'box-sizing: border-box',
-    'word-wrap: break-word',
-    'overflow-wrap: break-word',
-    'overflow: visible',
-    'white-space: normal',
+    'position:absolute',
+    'top:-99999px',
+    'left:0',
+    'visibility:hidden',
+    'pointer-events:none',
+    `width:${colW}px`,
+    `font-family:${fontFamily}`,
+    `font-size:${fontSize}`,
+    `line-height:${lineHeight}`,
+    'padding:0',
+    'margin:0',
+    'box-sizing:border-box',
+    'word-wrap:break-word',
+    'overflow-wrap:break-word',
+    'overflow:visible',
+    'white-space:normal',
   ].join(';');
-  document.body.appendChild(probe);
+  pageArea.appendChild(probe);
+
+  function paraHTML(idx) {
+    return `<div style="margin-bottom:${paraMarginPx}px">${allParagraphs[idx]}</div>`;
+  }
 
   function measureRange(startIdx, count) {
-    probe.innerHTML = allParagraphs
-      .slice(startIdx, startIdx + count)
-      .map(p => `<div style="margin-bottom:0.7em;">${p}</div>`)
-      .join('');
-    return probe.getBoundingClientRect().height || probe.scrollHeight;
+    let html = '';
+    for (let i = startIdx; i < startIdx + count; i++) html += paraHTML(i);
+    probe.innerHTML = html;
+    return probe.scrollHeight;
   }
 
   const total = allParagraphs.length;
@@ -726,13 +718,13 @@ function paginate(done) {
   while (idx < total) {
     const remaining = total - idx;
 
-    // Quick check: does everything remaining fit?
+    // Quick check: does everything remaining fit on one page?
     if (measureRange(idx, remaining) <= availH) {
       pages.push({ start: idx, end: total });
       break;
     }
 
-    // Binary search: find the max number of paragraphs that fit
+    // Binary search: largest count where content height ≤ availH
     let lo = 1, hi = remaining, fit = 1;
     while (lo <= hi) {
       const mid = (lo + hi) >> 1;
@@ -744,19 +736,19 @@ function paginate(done) {
       }
     }
 
-    if (fit < 1) fit = 1; // never get stuck
+    // Safety: always advance at least 1 paragraph to avoid infinite loop
+    if (fit < 1) fit = 1;
     pages.push({ start: idx, end: idx + fit });
     idx += fit;
   }
 
-  document.body.removeChild(probe);
-  console.log('[paginate] total pages=', pages.length);
+  pageArea.removeChild(probe);
   paginating = false;
   done();
 }
 
 // ═══════════════════════════════════════════════
-// RENDER  —  paint page N
+// RENDER — paint exactly one page
 // ═══════════════════════════════════════════════
 
 function render(n) {
@@ -766,17 +758,19 @@ function render(n) {
 
   const { start, end } = pages[n];
   bt.style.fontSize = `${fs}rem`;
+
+  const rootFontPx  = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const paraMarginPx = PARA_MB_EM * fs * rootFontPx;
+
   bt.innerHTML = allParagraphs
     .slice(start, end)
-    .map(p => `<div style="margin-bottom:0.7em;">${p}</div>`)
+    .map(p => `<div style="margin-bottom:${paraMarginPx}px">${p}</div>`)
     .join('');
 
-  // Navigation
   pv.disabled = (n === 0);
   nx.disabled = (n === pages.length - 1);
   pi.textContent = `Page ${n + 1} of ${pages.length}`;
 
-  // Progress bar
   const pct = pages.length > 1 ? Math.round((n / (pages.length - 1)) * 100) : 100;
   pf.style.width = `${pct}%`;
   pp.textContent = `${pct}%`;
@@ -800,12 +794,11 @@ $('back2').onclick = () => {
   ss.classList.remove('off');
 };
 
-// Touch swipe (left = next, right = prev)
+// Touch swipe
 let touchStartX = 0;
 rs.addEventListener('touchstart', ev => {
   touchStartX = ev.changedTouches[0].clientX;
 }, { passive: true });
-
 rs.addEventListener('touchend', ev => {
   const dx = ev.changedTouches[0].clientX - touchStartX;
   if (Math.abs(dx) > 50) {
@@ -814,15 +807,11 @@ rs.addEventListener('touchend', ev => {
   }
 }, { passive: true });
 
-// Keyboard arrows
+// Keyboard
 document.addEventListener('keydown', e => {
   if (!rs.classList.contains('on')) return;
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-    if (cur < pages.length - 1) render(cur + 1);
-  }
-  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-    if (cur > 0) render(cur - 1);
-  }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { if (cur < pages.length - 1) render(cur + 1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { if (cur > 0) render(cur - 1); }
 });
 
 // ═══════════════════════════════════════════════
@@ -838,18 +827,20 @@ $('fd').onclick = () => {
 
 function repaginate() {
   if (!allParagraphs.length) return;
-  paginating = false; // reset lock so paginate() can run again
+  paginating = false;
+  // Apply new font size to bt BEFORE measuring, so probe uses same lineHeight
+  bt.style.fontSize = `${fs}rem`;
   const savedCur = cur;
-  paginate(() => render(Math.min(savedCur, pages.length - 1)));
+  waitForLayout(() => paginate(() => render(Math.min(savedCur, pages.length - 1))));
 }
 
-// Re-paginate on window resize (desktop)
+// Re-paginate on resize (desktop)
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     if (allParagraphs.length && rs.classList.contains('on')) repaginate();
-  }, 250);
+  }, 300);
 });
 
 // ═══════════════════════════════════════════════
