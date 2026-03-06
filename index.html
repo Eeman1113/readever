@@ -15,8 +15,22 @@
   --mono: 'IBM Plex Mono', monospace;
   --body: 'Lora', Georgia, serif;
 
-  --kw: 758px;
-  --kh: 1024px;
+  --kw: 618px;
+  --kh: 824px;
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --kw: 618px;
+    --kh: 824px;
+  }
+}
+
+@media (max-width: 1280px) {
+  :root {
+    --kw: 100vw;
+    --kh: 100dvh;
+  }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -28,6 +42,7 @@ html, body {
   background: #888;
   background-image: conic-gradient(#000 25%,#fff 0 50%,#000 0 75%,#fff 0);
   background-size: 6px 6px;
+  background-attachment: fixed;
   image-rendering: pixelated;
   font-family: var(--ui);
   font-size: 16px;
@@ -51,11 +66,9 @@ html, body {
   position: relative;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1280px) {
   html, body { overflow: hidden; }
   .kindle-frame {
-    width: 100vw;
-    height: 100dvh;
     border: none;
     box-shadow: none;
   }
@@ -72,6 +85,12 @@ html, body {
   overflow: hidden;
   user-select: none;
   flex-shrink: 0;
+}
+
+@media (min-width: 1280px) {
+  .tbar {
+    height: 46px;
+  }
 }
 .tfill {
   flex: 1;
@@ -117,6 +136,14 @@ html, body {
 .btn::after { content:''; position:absolute; inset:-10px; }
 .btn:active { box-shadow:none; transform:translate(3px,3px); background:var(--k); color:var(--w); }
 .btn:disabled { color:var(--d); border-color:var(--d); box-shadow:none; pointer-events:none; }
+
+@media (min-width: 1280px) {
+  .btn {
+    font-size: 14px;
+    min-width: 50px;
+    min-height: 40px;
+  }
+}
 
 /* ── SCREENS ── */
 #ss, #rs { display:flex; flex-direction:column; flex:1; min-height:0; }
@@ -286,14 +313,11 @@ html, body {
   pointer-events:none;
 }
 
-.frow {
-  display:flex; gap:6px; align-items:center;
-  padding:6px 10px;
-  border-bottom: 2px dashed var(--k);
-  flex-shrink: 0;
+@media (min-width: 1280px) {
+  .prog {
+    height: 28px;
+  }
 }
-.frow .btn { min-width:50px; min-height:36px; }
-.flbl { font-family:var(--mono); font-size:10px; color:var(--g); margin-right:auto; letter-spacing:.07em; }
 
 /*
   PAGE AREA — fills ALL remaining vertical space.
@@ -302,6 +326,7 @@ html, body {
 #page-area {
   flex: 1;
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -335,12 +360,21 @@ html, body {
   padding: 18px 22px;
   flex: 1;
   min-height: 0;
+  height: 100%;
   overflow: hidden;
   display: none;
   background: var(--w);
   color: var(--k);
   word-wrap: break-word;
   overflow-wrap: break-word;
+  max-height: 100%;
+}
+
+@media (min-width: 1280px) {
+  #bt {
+    font-size: 1.1rem;
+    padding: 20px 24px;
+  }
 }
 
 .ch {
@@ -357,6 +391,14 @@ html, body {
   margin: 14px 0 10px;
 }
 
+@media (min-width: 1280px) {
+  .ch {
+    font-size: 0.9em;
+    padding: 8px 0;
+    margin: 16px 0 12px;
+  }
+}
+
 .nav {
   border-top: 3px solid var(--k);
   padding: 8px 10px;
@@ -368,6 +410,20 @@ html, body {
 }
 .nav .btn { min-width:86px; min-height:46px; font-size:12px; }
 #pi { flex:1; text-align:center; font-family:var(--mono); font-size:11px; color:var(--g); letter-spacing:.06em; line-height:1.4; }
+
+@media (min-width: 1280px) {
+  .nav {
+    padding: 10px 12px;
+  }
+  .nav .btn {
+    min-width:100px;
+    min-height:50px;
+    font-size:14px;
+  }
+  #pi {
+    font-size:13px;
+  }
+}
 
 ::-webkit-scrollbar { width:6px; }
 ::-webkit-scrollbar-track { background:var(--w); border-left:2px solid var(--k); }
@@ -410,6 +466,8 @@ html, body {
   <!-- ══ READER SCREEN ══ -->
   <div id="rs">
     <div class="tbar">
+      <button class="btn" id="fd" style="min-width:40px;font-size:14px;">A−</button>
+      <button class="btn" id="fu" style="min-width:40px;font-size:14px;">A+</button>
       <div class="tfill"></div>
       <button class="btn" id="back2" style="min-width:54px;font-size:11px;">← LIST</button>
     </div>
@@ -417,12 +475,6 @@ html, body {
     <div class="prog">
       <div class="pf" id="pf"></div>
       <div class="pt" id="pp">0%</div>
-    </div>
-
-    <div class="frow">
-      <span class="flbl">FONT SIZE</span>
-      <button class="btn" id="fd">A−</button>
-      <button class="btn" id="fu">A+</button>
     </div>
 
     <div id="page-area">
@@ -478,14 +530,14 @@ async function suggest(q) {
     const items = (d.results || []).slice(0, 6);
     if (!items.length) { hideSug(); return; }
     sug.innerHTML = '';
-    items.forEach(b => {
+    for (const b of items) {
       const el = document.createElement('div');
       el.className = 'si';
       const a = b.authors[0]?.name || '';
       el.innerHTML = `<span>${esc(b.title)}</span><span class="si-auth">${esc(a)}</span>`;
       el.onclick = () => { si.value = b.title; hideSug(); openBook(b); };
       sug.appendChild(el);
-    });
+    }
     sug.classList.add('open');
   } catch(_) { hideSug(); }
 }
@@ -502,7 +554,7 @@ async function search() {
     ra.classList.add('on');
     if (!books.length) { em.classList.add('on'); return; }
     rh.textContent = `${books.length} result${books.length > 1 ? 's' : ''} found`;
-    books.forEach(b => {
+    for (const b of books) {
       const el = document.createElement('div');
       el.className = 'ri';
       const a = b.authors.map(x => x.name).join(', ') || 'Unknown';
@@ -510,7 +562,7 @@ async function search() {
                       <div class="ri-m">${esc(a)} · ${(b.download_count||0).toLocaleString()} reads</div>`;
       el.onclick = () => openBook(b);
       rl.appendChild(el);
-    });
+    }
   } catch(_) {
     ld.classList.remove('on');
     smsg.textContent = 'Could not reach server.';
@@ -550,6 +602,7 @@ async function openBook(b) {
       txt = await r.text();
     }
 
+    if (!txt || txt.length < 100) throw new Error('Book content is empty');
     processText(txt);
   } catch(_) {
     showErr('Could not load book. Check your connection.');
@@ -570,40 +623,73 @@ function bestUrl(f) {
 function processText(raw) {
   let t = raw;
 
-  // Strip Gutenberg header/footer
   const s = t.search(/\*{3}\s*START OF (THE|THIS) PROJECT GUTENBERG/i);
   if (s !== -1) t = t.slice(t.indexOf('\n', s) + 1);
   const en = t.search(/\*{3}\s*END OF (THE|THIS) PROJECT GUTENBERG/i);
   if (en !== -1) t = t.slice(0, en);
   t = t.trim();
 
-  // Split on blank lines first, then also split long single-newline blocks
-  // This handles TOC-style content that has no blank lines between entries
-  const chunks = [];
-  for (const block of t.split(/\n{2,}/)) {
-    const trimmed = block.trim();
+  const paragraphs = t.split(/\n\s*\n/);
+  const processed = [];
+
+  for (const para of paragraphs) {
+    const trimmed = para.trim();
     if (!trimmed) continue;
-    const lines = trimmed.split('\n').map(l => l.trim()).filter(Boolean);
-    // If block is a single long run (like a TOC dumped on one line), split it into sentences
-    if (lines.length === 1 && lines[0].length > 300) {
-      // Split on sentence boundaries or chapter markers
-      const parts = lines[0]
-        .split(/(?<=\.) (?=[A-Z])|(?=CHAPTER [IVXLCDM]+\.)|(?=CHAPTER \d+)/)
-        .map(p => p.trim()).filter(Boolean);
-      chunks.push(...parts);
-    } else {
-      chunks.push(lines.join(' '));
+
+    const isChapterHeader =
+      /^(CHAPTER|PART|BOOK|SECTION|PROLOGUE|EPILOGUE|PREFACE|APPENDIX|VOLUME)\b/i.test(trimmed) ||
+      (trimmed.length < 120 && trimmed === trimmed.toUpperCase() && /[A-Z]{3}/.test(trimmed) && !trimmed.includes('.'));
+
+    if (isChapterHeader) {
+      processed.push({ type: 'header', text: trimmed });
+      continue;
     }
+
+    const lines = trimmed.split('\n');
+    const reconstructed = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const prevLine = reconstructed[reconstructed.length - 1];
+      const shouldContinue =
+        prevLine &&
+        !prevLine.endsWith('.') &&
+        !prevLine.endsWith('!') &&
+        !prevLine.endsWith('?') &&
+        !prevLine.endsWith('"') &&
+        !/^[A-Z]$/.test(line[0]) &&
+        !/^(CHAPTER|PART|BOOK|SECTION|PROLOGUE|EPILOGUE|PREFACE|APPENDIX|VOLUME)\b/i.test(line);
+
+      if (shouldContinue) {
+        reconstructed[reconstructed.length - 1] += ' ' + line;
+      } else {
+        reconstructed.push(line);
+      }
+    }
+
+    processed.push({ type: 'text', text: reconstructed.join(' ') });
   }
 
-  allParagraphs = chunks.map(p => {
-    if (!p) return null;
-    const isHeading =
-      /^(chapter|part|book|section|prologue|epilogue|preface|appendix)\b/i.test(p) ||
-      (p.length < 80 && p === p.toUpperCase() && /[A-Z]{3}/.test(p));
-    if (isHeading) return `<span class="ch">${esc(p)}</span>`;
-    return esc(p);
-  }).filter(Boolean);
+  allParagraphs = [];
+  for (const item of processed) {
+    if (item.type === 'header') {
+      allParagraphs.push(`<span class="ch">${esc(item.text)}</span>`);
+      continue;
+    }
+
+    if (item.text.length <= 350) {
+      allParagraphs.push(esc(item.text));
+      continue;
+    }
+
+    const sentences = item.text.split(/(?<=[.!?])\s+(?=[A-Z])/);
+    for (const s of sentences) {
+      const trimmed = s.trim();
+      if (trimmed) allParagraphs.push(esc(trimmed));
+    }
+  }
 
   bl.classList.remove('on');
   bt.style.display = 'block';
@@ -617,9 +703,8 @@ function waitForLayout(cb) {
     tries++;
     const h = pageArea.offsetHeight;
     const w = bt.offsetWidth || pageArea.offsetWidth;
-    if (h > 80 && w > 80) { cb(); }
-    else if (tries < 60) { requestAnimationFrame(check); }
-    else { cb(); }
+    if (h > 80 && w > 80 || tries >= 10) cb();
+    else requestAnimationFrame(check);
   }
   requestAnimationFrame(check);
 }
@@ -648,11 +733,13 @@ function paginate(done) {
   if (!allParagraphs.length) { paginating = false; done(); return; }
 
   const total = allParagraphs.length;
-
-  // Apply current font size before measuring
   bt.style.fontSize = `${fs}rem`;
 
-  // Build pages by filling bt and detecting overflow
+  const lineHeight = parseFloat(window.getComputedStyle(bt).lineHeight) || 29.6;
+  const availableHeight = bt.clientHeight;
+  const linesPerPage = Math.floor(availableHeight / lineHeight);
+  const estimatedParagraphsPerPage = Math.max(3, Math.floor(linesPerPage / 2));
+
   let pageStart = 0;
 
   function buildPages() {
@@ -660,45 +747,53 @@ function paginate(done) {
     let i = pageStart;
 
     while (i < total) {
-      // Add next paragraph
       const div = document.createElement('div');
       div.style.marginBottom = '0.7em';
       div.innerHTML = allParagraphs[i];
       bt.appendChild(div);
 
-      // Check overflow: scrollHeight > clientHeight means content exceeds visible area
-      if (bt.scrollHeight > bt.clientHeight + 1) {
-        // This paragraph caused overflow
+      if (bt.scrollHeight > bt.clientHeight + 5) {
         if (i === pageStart) {
-          // Single paragraph already overflows — must include it alone
-          // (long paragraph, no choice). Accept it and move on.
           pages.push({ start: pageStart, end: i + 1 });
           pageStart = i + 1;
           bt.innerHTML = '';
           i = pageStart;
         } else {
-          // Previous paragraph was the last that fit
           pages.push({ start: pageStart, end: i });
           pageStart = i;
           bt.innerHTML = '';
-          // Don't increment i — retry this paragraph on the new page
         }
       } else {
         i++;
       }
     }
 
-    // Remaining paragraphs form the last page
     if (pageStart < total) {
       pages.push({ start: pageStart, end: total });
     }
 
     bt.innerHTML = '';
+
+    if (pages.length === 1 && total > estimatedParagraphsPerPage) {
+      const paragraphsPerPage = estimatedParagraphsPerPage;
+      pages = [];
+      for (let start = 0; start < total; start += paragraphsPerPage) {
+        pages.push({ start: start, end: Math.min(start + paragraphsPerPage, total) });
+      }
+    }
+
+    if (pages.length === 1 && total > 5) {
+      const paragraphsPerPage = Math.max(2, Math.floor(total / Math.ceil(total / estimatedParagraphsPerPage)));
+      pages = [];
+      for (let start = 0; start < total; start += paragraphsPerPage) {
+        pages.push({ start: start, end: Math.min(start + paragraphsPerPage, total) });
+      }
+    }
+
     paginating = false;
     done();
   }
 
-  // Run in next frame so bt has its final layout dimensions
   requestAnimationFrame(() => requestAnimationFrame(buildPages));
 }
 
@@ -714,10 +809,11 @@ function render(n) {
   const { start, end } = pages[n];
   bt.style.fontSize = `${fs}rem`;
 
-  bt.innerHTML = allParagraphs
-    .slice(start, end)
-    .map(p => `<div style="margin-bottom:0.7em">${p}</div>`)
-    .join('');
+  let html = '';
+  for (let i = start; i < end; i++) {
+    html += `<div style="margin-bottom:0.7em">${allParagraphs[i]}</div>`;
+  }
+  bt.innerHTML = html;
 
   pv.disabled = (n === 0);
   nx.disabled = (n === pages.length - 1);
@@ -781,11 +877,8 @@ function repaginate() {
   if (!allParagraphs.length) return;
   paginating = false;
   bt.style.fontSize = `${fs}rem`;
-  const savedCur = cur;
-  // Find approximate position in text to restore reading position
-  const savedStart = pages[savedCur]?.start || 0;
+  const savedStart = pages[cur]?.start || 0;
   paginate(() => {
-    // Find the page containing the saved paragraph index
     const targetPage = pages.findIndex(p => p.end > savedStart);
     render(Math.max(0, targetPage));
   });
@@ -805,11 +898,12 @@ window.addEventListener('resize', () => {
 // ═══════════════════════════════════════════════
 
 function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  const str = String(s);
+  return str.replace(/[&<"]/g, m => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '"': '&quot;'
+  }[m]));
 }
 
 document.addEventListener('click', ev => {
