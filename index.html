@@ -84,11 +84,36 @@ html, body {
   .tbar {
     height: 46px;
   }
+  .tb-pct {
+    font-size: 11px;
+  }
 }
 .tfill {
   flex: 1;
   height: 12px;
   background: repeating-linear-gradient(180deg,var(--k) 0 2px,var(--w) 2px 4px);
+  margin: 0 5px;
+  display: flex;
+  align-items: center;
+}
+.tb-progress {
+  width: 100%;
+  height: 4px;
+  background: var(--d);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.tb-bar {
+  height: 100%;
+  background: var(--k);
+  width: 0%;
+  transition: width 0.15s;
+}
+.tb-pct {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--g);
   margin: 0 5px;
 }
 
@@ -279,27 +304,6 @@ html, body {
 .empty.on { display:block; }
 
 /* ══ READER SCREEN ══ */
-.prog {
-  border-bottom: 3px solid var(--k);
-  height: 24px;
-  background: var(--w);
-  position: relative;
-  flex-shrink: 0;
-}
-.pf { height:100%; background:var(--k); width:0%; transition: width 0.15s; }
-.pt {
-  position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  font-family:var(--mono); font-size:10px; font-weight:700;
-  letter-spacing:.06em; color:var(--w); mix-blend-mode:difference;
-  pointer-events:none;
-}
-
-@media (min-width: 1280px) {
-  .prog {
-    height: 28px;
-  }
-}
 
 /*
   PAGE AREA — fills ALL remaining vertical space.
@@ -450,13 +454,13 @@ html, body {
     <div class="tbar">
       <button class="btn" id="fd" style="min-width:40px;font-size:14px;">A−</button>
       <button class="btn" id="fu" style="min-width:40px;font-size:14px;">A+</button>
-      <div class="tfill"></div>
+      <div class="tfill">
+        <div class="tb-progress">
+          <div class="tb-bar" id="pf"></div>
+        </div>
+      </div>
+      <span class="tb-pct" id="pp">0%</span>
       <button class="btn" id="back2" style="min-width:54px;font-size:11px;">← LIST</button>
-    </div>
-
-    <div class="prog">
-      <div class="pf" id="pf"></div>
-      <div class="pt" id="pp">0%</div>
     </div>
 
     <div id="page-area">
