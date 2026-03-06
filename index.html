@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Readever</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --k: #000;
+  --w: #fff;
+  --g: #555;
+  --d: #bbb;
+  --ui:   'IBM Plex Sans', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+  --body: Georgia, serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  min-height: 100vh;
+  background: #888;
+  background-image: conic-gradient(#000 25%,#fff 0 50%,#000 0 75%,#fff 0);
+  background-size: 6px 6px;
+  image-rendering: pixelated;
+  font-family: var(--ui);
+  font-size: 18px;
+  color: var(--k);
+  overflow-x: hidden;
+}
+
+/* ── WINDOW ── */
+.win {
+  background: var(--w);
+  border: 3px solid var(--k);
+  box-shadow: 5px 5px 0 var(--k);
+  margin: 16px 10px;
+}
+
+/* ── TITLE BAR ── */
+.tbar {
+  border-bottom: 3px solid var(--k);
+  height: 46px;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  gap: 0;
+  overflow: hidden;
+  user-select: none;
+}
+.tfill {
+  flex: 1;
+  height: 12px;
+  background: repeating-linear-gradient(180deg,var(--k) 0 2px,var(--w) 2px 4px);
+  margin: 0 5px;
+}
+.ttxt {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 58vw;
+  padding: 0 8px;
+  background: var(--w);
+  z-index: 1;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  background: var(--w);
+  border: 3px solid var(--k);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--k);
+  cursor: pointer;
+  min-width: 52px;
+  min-height: 38px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 3px 3px 0 var(--k);
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+  position: relative;
+}
+.btn::after { content:''; position:absolute; inset:-10px; }
+.btn:active { box-shadow:none; transform:translate(3px,3px); background:var(--k); color:var(--w); }
+.btn:disabled { color:var(--d); border-color:var(--d); box-shadow:none; pointer-events:none; }
+
+/* ── SEARCH SCREEN ── */
+#ss { min-height:100vh; display:flex; flex-direction:column; }
+#ss .win { flex:1; display:flex; flex-direction:column; min-height:calc(100vh - 32px); }
+
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 28px 52vh;
+}
+.hero-sub {
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  color: var(--g);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.hero-title {
+  font-family: var(--ui);
+  font-size: 54px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 34px;
+  line-height: 1;
+}
+
+/* Joined search bar */
+.sbar {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  border: 3px solid var(--k);
+  box-shadow: 4px 4px 0 var(--k);
+  position: relative;
+}
+.sbar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: var(--ui);
+  font-size: 16px;
+  padding: 16px 14px;
+  min-height: 58px;
+  background: var(--w);
+  color: var(--k);
+  -webkit-appearance: none;
+}
+.sbar-btn {
+  background: var(--k);
+  border: none;
+  border-left: 3px solid var(--k);
+  min-width: 62px;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 22px;
+  color: var(--w);
+  flex-shrink: 0;
+  position: relative;
+}
+.sbar-btn::after { content:''; position:absolute; inset:-10px; }
+.sbar-btn:active { background: var(--g); }
+
+/* Suggestions */
+#sug {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: -65px;
+  background: var(--w);
+  border: 3px solid var(--k);
+  box-shadow: 4px 4px 0 var(--k);
+  z-index: 200;
+  max-height: 280px;
+  overflow-y: auto;
+}
+#sug.open { display: block; }
+.si {
+  padding: 14px;
+  border-bottom: 2px solid var(--k);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 56px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.si:last-child { border-bottom: none; }
+.si:active { background: var(--k); color: var(--w); }
+.si-auth { font-size: 12px; color: var(--g); margin-left: auto; white-space: nowrap; font-style: italic; }
+.si:active .si-auth { color: var(--d); }
+
+/* Status + loader */
+#smsg { font-size: 14px; color: var(--g); margin-top: 10px; text-align: center; min-height: 20px; }
+.ld { display:none; align-items:center; gap:10px; justify-content:center; margin-top:14px; }
+.ld.on { display:flex; }
+.dot { width:10px; height:10px; background:var(--k); animation:bl 1s step-start infinite; }
+.dot:nth-child(2){ animation-delay:.2s; }
+.dot:nth-child(3){ animation-delay:.4s; }
+@keyframes bl { 50%{ background:var(--d); } }
+.ld span { font-family:var(--mono); font-size:12px; letter-spacing:.06em; }
+
+/* Results area */
+.rarea { padding: 0 16px 20px; border-top: 3px solid var(--k); display:none; }
+.rarea.on { display:block; }
+.rhdr { font-family:var(--mono); font-size:11px; color:var(--g); letter-spacing:.1em; text-transform:uppercase; padding:10px 0 12px; }
+.ri {
+  border: 3px solid var(--k);
+  padding: 14px 12px;
+  margin-bottom: 8px;
+  background: var(--w);
+  box-shadow: 3px 3px 0 var(--k);
+  min-height: 66px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+}
+.ri:active { background:var(--k); color:var(--w); box-shadow:none; transform:translate(3px,3px); }
+.ri:active .ri-m { color:var(--d); }
+.ri-t { font-size:16px; font-weight:700; }
+.ri-m { font-size:12px; color:var(--g); }
+.empty { display:none; border:3px dashed var(--k); padding:22px; text-align:center; font-size:14px; color:var(--g); }
+.empty.on { display:block; }
+
+/* ── READER SCREEN ── */
+#rs { display:none; }
+#rs.on { display:block; }
+#ss.off { display:none; }
+
+/* Progress */
+.prog {
+  border: 3px solid var(--k);
+  height: 20px;
+  margin: 10px 12px 6px;
+  background: var(--w);
+  position: relative;
+}
+.pf { height:100%; background:var(--k); width:0%; }
+.pt {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:10px; font-weight:700;
+  letter-spacing:.06em; color:var(--w); mix-blend-mode:difference;
+  pointer-events:none;
+}
+
+/* Font controls */
+.frow {
+  display:flex; gap:8px; align-items:center;
+  padding:7px 12px 9px;
+  border-bottom: 2px dashed var(--k);
+}
+.frow .btn { min-width:58px; min-height:42px; }
+.flbl { font-family:var(--mono); font-size:11px; color:var(--g); margin-right:auto; letter-spacing:.07em; }
+
+/* Book */
+#bc { padding:12px; }
+#bl { display:none; padding:32px; text-align:center; font-family:var(--mono); font-size:13px; color:var(--g); letter-spacing:.06em; }
+#bl.on { display:block; }
+#bt {
+  font-family: var(--body);
+  font-size: 1.05rem;
+  line-height: 2.0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  border: 3px solid var(--k);
+  box-shadow: inset 3px 3px 0 var(--k);
+  padding: 18px 16px;
+  background: var(--w);
+}
+.ch {
+  display:block;
+  font-family:var(--ui);
+  font-size:1em;
+  font-weight:700;
+  text-align:center;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  border-top:3px solid var(--k);
+  border-bottom:3px solid var(--k);
+  padding:8px 0;
+  margin:20px 0 12px;
+}
+
+/* Nav */
+.nav {
+  border-top: 3px solid var(--k);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--w);
+}
+.nav .btn { min-width:96px; min-height:54px; font-size:14px; }
+#pi { flex:1; text-align:center; font-family:var(--mono); font-size:12px; color:var(--g); letter-spacing:.06em; }
+
+::-webkit-scrollbar { width:8px; }
+::-webkit-scrollbar-track { background:var(--w); border-left:2px solid var(--k); }
+::-webkit-scrollbar-thumb { background:var(--k); }
+</style>
+</head>
+<body>
+
+<!-- SEARCH -->
+<div id="ss">
+  <div class="win">
+    <div class="tbar">
+      <button class="btn" style="min-width:36px;padding:0 5px;" onclick="void 0">✕</button>
+      <div class="tfill"></div>
+      <span class="ttxt">Readever</span>
+      <div class="tfill"></div>
+      <button class="btn" id="new-btn" style="min-width:46px;">NEW</button>
+    </div>
+
+    <div class="hero">
+      <div class="hero-sub">Welcome to</div>
+      <div class="hero-title">Readever</div>
+
+      <div class="sbar">
+        <div style="position:relative;flex:1;display:flex;">
+          <input id="si" type="text" placeholder="what do you want to read?"
+            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          <div id="sug"></div>
+        </div>
+        <button class="sbar-btn" id="sb">→</button>
+      </div>
+
+      <div id="smsg"></div>
+      <div class="ld" id="ld">
+        <div style="display:flex;gap:5px;"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <span>Searching...</span>
+      </div>
+    </div>
+
+    <div class="rarea" id="ra">
+      <div class="rhdr" id="rh"></div>
+      <div id="rl"></div>
+      <div class="empty" id="em">[ No books found. Try another search. ]</div>
+    </div>
+  </div>
+</div>
+
+<!-- READER -->
+<div id="rs">
+  <div class="win">
+    <div class="tbar">
+      <button class="btn" id="back" style="min-width:36px;padding:0 5px;">✕</button>
+      <div class="tfill"></div>
+      <span class="ttxt" id="rt">...</span>
+      <div class="tfill"></div>
+      <button class="btn" id="back2" style="min-width:60px;font-size:12px;">← LIST</button>
+    </div>
+
+    <div class="prog">
+      <div class="pf" id="pf"></div>
+      <div class="pt" id="pp">0%</div>
+    </div>
+
+    <div class="frow">
+      <span class="flbl">SIZE</span>
+      <button class="btn" id="fd">A−</button>
+      <button class="btn" id="fu">A+</button>
+    </div>
+
+    <div id="bc">
+      <div id="bl" class="on">[ Loading... ]</div>
+      <div id="bt"></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn" id="pv" disabled>◄ PREV</button>
+      <span id="pi">— / —</span>
+      <button class="btn" id="nx" disabled>NEXT ►</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='https://gutendex.com/books/';
+const PRX='https://corsproxy.io/?';
+const PG=3200;
+
+let T=null, pages=[], cur=0, fs=1.05;
+
+const $=id=>document.getElementById(id);
+const ss=$('ss'), rs=$('rs'), si=$('si'), sug=$('sug'),
+      smsg=$('smsg'), ld=$('ld'), rl=$('rl'), ra=$('ra'),
+      rh=$('rh'), em=$('em'), rt=$('rt'), bl=$('bl'),
+      bt=$('bt'), pf=$('pf'), pp=$('pp'), pi=$('pi'),
+      pv=$('pv'), nx=$('nx');
+
+si.addEventListener('input',()=>{
+  const q=si.value.trim();
+  clearTimeout(T);
+  if(q.length<2){hideSug();return;}
+  T=setTimeout(()=>suggest(q),360);
+});
+si.addEventListener('keydown',e=>{if(e.key==='Enter'){hideSug();search();}});
+$('sb').addEventListener('click',()=>{hideSug();search();});
+$('new-btn').addEventListener('click',()=>{
+  si.value='';rl.innerHTML='';smsg.textContent='';
+  em.classList.remove('on');ra.classList.remove('on');rh.textContent='';
+});
+
+async function suggest(q){
+  try{
+    const d=await(await fetch(`${API}?search=${encodeURIComponent(q)}&page=1`)).json();
+    const items=(d.results||[]).slice(0,6);
+    if(!items.length){hideSug();return;}
+    sug.innerHTML='';
+    items.forEach(b=>{
+      const el=document.createElement('div');
+      el.className='si';
+      const a=b.authors[0]?.name||'';
+      el.innerHTML=`<span>${e(b.title)}</span><span class="si-auth">${e(a)}</span>`;
+      el.onclick=()=>{si.value=b.title;hideSug();openBook(b);};
+      sug.appendChild(el);
+    });
+    sug.classList.add('open');
+  }catch(_){hideSug();}
+}
+function hideSug(){sug.classList.remove('open');}
+
+async function search(){
+  const q=si.value.trim();if(!q)return;
+  rl.innerHTML='';em.classList.remove('on');ra.classList.remove('on');
+  ld.classList.add('on');smsg.textContent='';
+  try{
+    const d=await(await fetch(`${API}?search=${encodeURIComponent(q)}&page=1`)).json();
+    const books=d.results||[];
+    ld.classList.remove('on');
+    ra.classList.add('on');
+    if(!books.length){em.classList.add('on');return;}
+    rh.textContent=`${books.length} result${books.length>1?'s':''} found`;
+    books.forEach(b=>{
+      const el=document.createElement('div');
+      el.className='ri';
+      const a=b.authors.map(x=>x.name).join(', ')||'Unknown';
+      el.innerHTML=`<div class="ri-t">${e(b.title)}</div><div class="ri-m">${e(a)} · ${(b.download_count||0).toLocaleString()} reads</div>`;
+      el.onclick=()=>openBook(b);
+      rl.appendChild(el);
+    });
+  }catch(_){
+    ld.classList.remove('on');
+    smsg.textContent='Could not reach server.';
+    ra.classList.add('on');
+  }
+}
+
+async function openBook(b){
+  rt.textContent=b.title;
+  bt.innerHTML='';bl.classList.add('on');
+  pages=[];cur=0;pv.disabled=true;nx.disabled=true;
+  pi.textContent='— / —';pf.style.width='0%';pp.textContent='0%';
+  ss.classList.add('off');rs.classList.add('on');
+  window.scrollTo(0,0);
+  const url=bestUrl(b.formats);
+  if(!url){err('No text version available.');return;}
+  try{
+    let txt=null;
+    try{const r=await fetch(url,{mode:'cors'});if(r.ok)txt=await r.text();}catch(_){}
+    if(!txt){const r=await fetch(PRX+encodeURIComponent(url));if(!r.ok)throw 0;txt=await r.text();}
+    process(txt);
+  }catch(_){err('Could not load. Check connection.');}
+}
+
+function bestUrl(f){
+  for(const m of['text/plain; charset=utf-8','text/plain; charset=us-ascii','text/plain'])if(f[m])return f[m];
+  const k=Object.keys(f).find(k=>k.startsWith('text/plain'));
+  return k?f[k]:null;
+}
+
+function process(raw){
+  let t=raw;
+  const s=t.search(/\*\*\*\s*START OF (THE|THIS) PROJECT GUTENBERG[^\n]*/i);
+  if(s!==-1)t=t.slice(t.indexOf('\n',s)+1);
+  const en=t.search(/\*\*\*\s*END OF (THE|THIS) PROJECT GUTENBERG[^\n]*/i);
+  if(en!==-1)t=t.slice(0,en);
+  t=t.trim();
+  pages=paginate(t);
+  bl.classList.remove('on');
+  render(0);
+}
+
+function paginate(text){
+  const out=[];let s=0;
+  while(s<text.length){
+    let end=s+PG;
+    if(end>=text.length){out.push(text.slice(s));break;}
+    const seg=text.slice(end-200,end+200);
+    const p=seg.lastIndexOf('\n\n');
+    if(p!==-1)end=end-200+p+2;
+    else{const n=text.lastIndexOf('\n',end);if(n>s)end=n+1;}
+    out.push(text.slice(s,end));s=end;
+  }
+  return out;
+}
+
+function render(n){
+  cur=n;window.scrollTo(0,0);
+  const lines=(pages[n]||'').split('\n');
+  let h='';
+  for(const l of lines){
+    const t=l.trim();
+    if(!t){h+='\n';continue;}
+    const isH=/^(chapter|part|book|section|prologue|epilogue|preface)\s+/i.test(t)
+      ||(t.length<55&&t===t.toUpperCase()&&/[A-Z]{3}/.test(t));
+    h+=isH?`<span class="ch">${e(t)}</span>`:e(t)+'\n';
+  }
+  bt.innerHTML=h;
+  bt.style.fontSize=`${fs}rem`;
+  pv.disabled=n===0;
+  nx.disabled=n===pages.length-1;
+  pi.textContent=`${n+1} / ${pages.length}`;
+  const pct=pages.length>1?Math.round((n/(pages.length-1))*100):100;
+  pf.style.width=`${pct}%`;
+  pp.textContent=`${pct}%`;
+}
+
+function err(m){bl.classList.remove('on');bt.textContent=`[ ${m} ]`;}
+
+pv.onclick=()=>{if(cur>0)render(cur-1);};
+nx.onclick=()=>{if(cur<pages.length-1)render(cur+1);};
+[$('back'),$('back2')].forEach(b=>b.onclick=()=>{
+  rs.classList.remove('on');ss.classList.remove('off');window.scrollTo(0,0);
+});
+
+let tx=0;
+rs.addEventListener('touchstart',ev=>{tx=ev.changedTouches[0].clientX;},{passive:true});
+rs.addEventListener('touchend',ev=>{
+  const dx=ev.changedTouches[0].clientX-tx;
+  if(Math.abs(dx)>60){
+    if(dx<0&&cur<pages.length-1)render(cur+1);
+    if(dx>0&&cur>0)render(cur-1);
+  }
+},{passive:true});
+
+$('fu').onclick=()=>{if(fs<2.0){fs=+(fs+0.1).toFixed(1);bt.style.fontSize=`${fs}rem`;}};
+$('fd').onclick=()=>{if(fs>0.7){fs=+(fs-0.1).toFixed(1);bt.style.fontSize=`${fs}rem`;}};
+
+function e(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+document.addEventListener('click',ev=>{if(!ev.target.closest('.sbar'))hideSug();});
+</script>
+</body>
+</html>
