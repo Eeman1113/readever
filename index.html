@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
 <title>Readever</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&family=IBM+Plex+Sans:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -17,13 +18,6 @@
 
   --kw: 618px;
   --kh: 824px;
-}
-
-@media (min-width: 1280px) {
-  :root {
-    --kw: 618px;
-    --kh: 824px;
-  }
 }
 
 @media (max-width: 1280px) {
@@ -42,7 +36,6 @@ html, body {
   background: #888;
   background-image: conic-gradient(#000 25%,#fff 0 50%,#000 0 75%,#fff 0);
   background-size: 6px 6px;
-  background-attachment: fixed;
   image-rendering: pixelated;
   font-family: var(--ui);
   font-size: 16px;
@@ -97,19 +90,6 @@ html, body {
   height: 12px;
   background: repeating-linear-gradient(180deg,var(--k) 0 2px,var(--w) 2px 4px);
   margin: 0 5px;
-}
-.ttxt {
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 52vw;
-  padding: 0 8px;
-  background: var(--w);
-  z-index: 1;
 }
 
 /* ── BUTTONS ── */
@@ -293,6 +273,8 @@ html, body {
 .ri:active .ri-m { color:var(--d); }
 .ri-t { font-size:14px; font-weight:700; }
 .ri-m { font-size:11px; color:var(--g); }
+.err { display:none; padding:20px; text-align:center; font-family:var(--mono); font-size:0.85rem; color:var(--g); }
+.err.on { display:block; }
 .empty { display:none; border:3px dashed var(--k); margin:14px; padding:20px; text-align:center; font-size:13px; color:var(--g); }
 .empty.on { display:block; }
 
@@ -530,14 +512,16 @@ async function suggest(q) {
     const items = (d.results || []).slice(0, 6);
     if (!items.length) { hideSug(); return; }
     sug.innerHTML = '';
+    const frag = document.createDocumentFragment();
     for (const b of items) {
       const el = document.createElement('div');
       el.className = 'si';
       const a = b.authors[0]?.name || '';
       el.innerHTML = `<span>${esc(b.title)}</span><span class="si-auth">${esc(a)}</span>`;
       el.onclick = () => { si.value = b.title; hideSug(); openBook(b); };
-      sug.appendChild(el);
+      frag.appendChild(el);
     }
+    sug.appendChild(frag);
     sug.classList.add('open');
   } catch(_) { hideSug(); }
 }
@@ -554,15 +538,18 @@ async function search() {
     ra.classList.add('on');
     if (!books.length) { em.classList.add('on'); return; }
     rh.textContent = `${books.length} result${books.length > 1 ? 's' : ''} found`;
+    const frag = document.createDocumentFragment();
     for (const b of books) {
       const el = document.createElement('div');
       el.className = 'ri';
-      const a = b.authors.map(x => x.name).join(', ') || 'Unknown';
+      let a = 'Unknown';
+      if (b.authors?.length) a = b.authors.map(x => x.name).join(', ');
       el.innerHTML = `<div class="ri-t">${esc(b.title)}</div>
                       <div class="ri-m">${esc(a)} · ${(b.download_count||0).toLocaleString()} reads</div>`;
       el.onclick = () => openBook(b);
-      rl.appendChild(el);
+      frag.appendChild(el);
     }
+    rl.appendChild(frag);
   } catch(_) {
     ld.classList.remove('on');
     smsg.textContent = 'Could not reach server.';
@@ -827,7 +814,7 @@ function render(n) {
 function showErr(m) {
   bl.classList.remove('on');
   bt.style.display = 'block';
-  bt.innerHTML = `<div style="color:#555;font-family:var(--mono);font-size:0.85rem;padding:20px;">[ ${esc(m)} ]</div>`;
+  bt.innerHTML = `<div class="err on">[ ${esc(m)} ]</div>`;
 }
 
 // ═══════════════════════════════════════════════
