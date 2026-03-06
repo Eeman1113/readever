@@ -15,7 +15,7 @@
   --mono: 'IBM Plex Mono', monospace;
   --body: 'Lora', Georgia, serif;
 
-  /* Kindle PW 11 logical canvas size */
+  /* Kindle PW 11 logical canvas — FIXED dimensions */
   --kw: 758px;
   --kh: 1024px;
 }
@@ -23,6 +23,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 html, body {
+  width: 100%;
+  height: 100%;
   min-height: 100vh;
   background: #888;
   background-image: conic-gradient(#000 25%,#fff 0 50%,#000 0 75%,#fff 0);
@@ -31,36 +33,35 @@ html, body {
   font-family: var(--ui);
   font-size: 16px;
   color: var(--k);
-  overflow-x: hidden;
-  /* centre the kindle box on desktop */
+  overflow: hidden; /* no body scroll at all */
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  padding: 20px 0;
+  justify-content: center;
 }
 
-/* ── KINDLE FRAME ── */
-/* On desktop: fixed Kindle size. On mobile: full width responsive */
+/* ── KINDLE FRAME ──
+   Desktop: fixed 758×1024 box, centred, never scrolls.
+   Mobile (≤800px): full viewport, responsive.
+*/
 .kindle-frame {
   width: var(--kw);
-  min-height: var(--kh);
+  height: var(--kh);
   background: var(--w);
   border: 3px solid var(--k);
   box-shadow: 7px 7px 0 var(--k);
   display: flex;
   flex-direction: column;
-  position: relative;
+  overflow: hidden; /* the frame itself NEVER scrolls */
   flex-shrink: 0;
+  position: relative;
 }
 
 @media (max-width: 800px) {
-  body { padding: 0; }
+  html, body { overflow: hidden; }
   .kindle-frame {
     width: 100vw;
-    min-height: 100vh;
-    border-left: none;
-    border-right: none;
+    height: 100dvh; /* dynamic viewport height — respects mobile browser chrome */
+    border: none;
     box-shadow: none;
   }
 }
@@ -123,7 +124,7 @@ html, body {
 .btn:disabled { color:var(--d); border-color:var(--d); box-shadow:none; pointer-events:none; }
 
 /* ── SCREENS ── */
-#ss, #rs { display:flex; flex-direction:column; flex:1; }
+#ss, #rs { display:flex; flex-direction:column; flex:1; min-height:0; }
 #ss.off { display:none; }
 #rs { display:none; }
 #rs.on { display:flex; }
@@ -136,6 +137,7 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: 30px 24px 40px;
+  overflow: hidden;
 }
 .hero-sub {
   font-family: var(--ui);
@@ -155,7 +157,6 @@ html, body {
   line-height: 1;
 }
 
-/* Joined search bar */
 .sbar {
   width: 100%;
   max-width: 420px;
@@ -194,7 +195,6 @@ html, body {
 .sbar-btn::after { content:''; position:absolute; inset:-10px; }
 .sbar-btn:active { background: var(--g); }
 
-/* Suggestions */
 #sug {
   display: none;
   position: absolute;
@@ -224,7 +224,6 @@ html, body {
 .si-auth { font-size: 11px; color: var(--g); margin-left: auto; white-space: nowrap; font-style: italic; }
 .si:active .si-auth { color: var(--d); }
 
-/* Status + loader */
 #smsg { font-size: 13px; color: var(--g); margin-top: 10px; text-align: center; min-height: 18px; }
 .ld { display:none; align-items:center; gap:10px; justify-content:center; margin-top:12px; }
 .ld.on { display:flex; }
@@ -234,13 +233,14 @@ html, body {
 @keyframes bl { 50%{ background:var(--d); } }
 .ld span { font-family:var(--mono); font-size:11px; letter-spacing:.06em; }
 
-/* Results area */
+/* Results — scrollable within fixed frame */
 .rarea {
   border-top: 3px solid var(--k);
-  display:none;
+  display: none;
   flex-direction: column;
-  max-height: 360px;
   overflow-y: auto;
+  flex-shrink: 0;
+  max-height: 50%; /* half the frame max */
 }
 .rarea.on { display:flex; }
 .rhdr {
@@ -285,7 +285,7 @@ html, body {
   position: relative;
   flex-shrink: 0;
 }
-.pf { height:100%; background:var(--k); width:0%; transition: width 0.2s; }
+.pf { height:100%; background:var(--k); width:0%; transition: width 0.15s; }
 .pt {
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
@@ -304,16 +304,22 @@ html, body {
 .frow .btn { min-width:50px; min-height:36px; }
 .flbl { font-family:var(--mono); font-size:10px; color:var(--g); margin-right:auto; letter-spacing:.07em; }
 
-/* Book page container — this is the KEY part */
-/* It takes all remaining vertical space between controls and nav */
+/* ── PAGE AREA ──
+   This is the CRITICAL region.
+   It takes all remaining vertical space between the controls bar
+   and the nav bar. NEVER scrolls. Pagination fills it exactly.
+*/
 #page-area {
   flex: 1;
+  min-height: 0;        /* critical flex child — allows shrinking below content size */
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* NO scroll ever */
+  overflow: hidden;     /* hard clip — no scroll, ever */
   position: relative;
+  background: var(--w);
 }
 
+/* Loading indicator */
 #bl {
   display: none;
   flex: 1;
@@ -326,15 +332,21 @@ html, body {
 }
 #bl.on { display: flex; }
 
-/* The actual text page — fills the page-area, clips at edges */
+/*
+  #bt — The rendered page of text.
+  overflow: hidden — text that doesn't fit is invisible (clipped),
+  never scrolled. The pagination engine ensures content NEVER exceeds
+  the available height, so clipping is only a safety net.
+*/
 #bt {
   font-family: var(--body);
   font-size: 1.0rem;
   line-height: 1.85;
   padding: 18px 22px;
   flex: 1;
-  overflow: hidden; /* never scrolls — pagination handles flow */
-  display: block;
+  min-height: 0;
+  overflow: hidden;     /* HARD CLIP — never scroll */
+  display: none;
   background: var(--w);
   color: var(--k);
   word-wrap: break-word;
@@ -356,7 +368,7 @@ html, body {
   margin: 14px 0 10px;
 }
 
-/* Nav */
+/* Nav bar — always at the bottom of the frame */
 .nav {
   border-top: 3px solid var(--k);
   padding: 8px 10px;
@@ -425,10 +437,10 @@ html, body {
       <button class="btn" id="fu">A+</button>
     </div>
 
-    <!-- This area fills all remaining space — no scroll -->
+    <!-- ── PAGE AREA: fills ALL remaining space, never scrolls ── -->
     <div id="page-area">
       <div id="bl" class="on">[ Loading... ]</div>
-      <div id="bt" style="display:none;"></div>
+      <div id="bt"></div>
     </div>
 
     <div class="nav">
@@ -441,6 +453,8 @@ html, body {
 </div><!-- /.kindle-frame -->
 
 <script>
+'use strict';
+
 const API = 'https://gutendex.com/books/';
 const PRX = 'https://corsproxy.io/?';
 
@@ -454,12 +468,16 @@ const ss=$('ss'), rs=$('rs'), si=$('si'), sug=$('sug'),
 
 // ── State ──
 let debT = null;
-let allParagraphs = [];  // array of HTML strings (paragraphs/chunks)
-let pages = [];          // array of arrays of paragraph indices per page
+let allParagraphs = [];   // array of HTML strings
+let pages = [];           // array of {start, end} paragraph index ranges
 let cur = 0;
-let fs = 1.0;
+let fs = 1.0;             // rem multiplier
+let paginating = false;
 
-// ── Search ──
+// ═══════════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════════
+
 si.addEventListener('input', () => {
   const q = si.value.trim();
   clearTimeout(debT);
@@ -503,7 +521,8 @@ async function search() {
       const el = document.createElement('div');
       el.className = 'ri';
       const a = b.authors.map(x => x.name).join(', ') || 'Unknown';
-      el.innerHTML = `<div class="ri-t">${esc(b.title)}</div><div class="ri-m">${esc(a)} · ${(b.download_count||0).toLocaleString()} reads</div>`;
+      el.innerHTML = `<div class="ri-t">${esc(b.title)}</div>
+                      <div class="ri-m">${esc(a)} · ${(b.download_count||0).toLocaleString()} reads</div>`;
       el.onclick = () => openBook(b);
       rl.appendChild(el);
     });
@@ -514,30 +533,45 @@ async function search() {
   }
 }
 
-// ── Open book ──
+// ═══════════════════════════════════════════════
+// OPEN BOOK
+// ═══════════════════════════════════════════════
+
 async function openBook(b) {
-  bt.innerHTML = ''; bt.style.display = 'none';
+  // Reset state
+  bt.innerHTML = '';
+  bt.style.display = 'none';
   bl.classList.add('on');
   allParagraphs = []; pages = []; cur = 0;
   pv.disabled = true; nx.disabled = true;
   pi.textContent = '— / —';
   pf.style.width = '0%'; pp.textContent = '0%';
+
+  // Switch to reader screen
   ss.classList.add('off');
   rs.classList.add('on');
 
   const url = bestUrl(b.formats);
-  if (!url) { err('No text version available.'); return; }
+  if (!url) { showErr('No text version available.'); return; }
 
   try {
     let txt = null;
-    try { const r = await fetch(url, { mode: 'cors' }); if (r.ok) txt = await r.text(); } catch(_) {}
+    // Try direct first, then via CORS proxy
+    try {
+      const r = await fetch(url, { mode: 'cors' });
+      if (r.ok) txt = await r.text();
+    } catch(_) {}
+
     if (!txt) {
       const r = await fetch(PRX + encodeURIComponent(url));
-      if (!r.ok) throw 0;
+      if (!r.ok) throw new Error('proxy failed');
       txt = await r.text();
     }
+
     processText(txt);
-  } catch(_) { err('Could not load. Check connection.'); }
+  } catch(_) {
+    showErr('Could not load book. Check your connection.');
+  }
 }
 
 function bestUrl(f) {
@@ -547,110 +581,186 @@ function bestUrl(f) {
   return k ? f[k] : null;
 }
 
-// ── Process raw text → paragraphs ──
+// ═══════════════════════════════════════════════
+// TEXT PROCESSING  →  paragraph array
+// ═══════════════════════════════════════════════
+
 function processText(raw) {
   let t = raw;
-  const s = t.search(/\*\*\*\s*START OF (THE|THIS) PROJECT GUTENBERG[^\n]*/i);
+
+  // Strip Gutenberg header/footer
+  const s = t.search(/\*{3}\s*START OF (THE|THIS) PROJECT GUTENBERG/i);
   if (s !== -1) t = t.slice(t.indexOf('\n', s) + 1);
-  const en = t.search(/\*\*\*\s*END OF (THE|THIS) PROJECT GUTENBERG[^\n]*/i);
+  const en = t.search(/\*{3}\s*END OF (THE|THIS) PROJECT GUTENBERG/i);
   if (en !== -1) t = t.slice(0, en);
   t = t.trim();
 
-  // Split into logical paragraphs (separated by blank lines)
+  // Split on blank lines → logical paragraphs
   const rawParas = t.split(/\n{2,}/);
+
   allParagraphs = rawParas.map(p => {
     const trimmed = p.trim();
     if (!trimmed) return null;
+
     const isHeading =
       /^(chapter|part|book|section|prologue|epilogue|preface|appendix)\s+/i.test(trimmed) ||
-      (trimmed.length < 60 && trimmed === trimmed.toUpperCase() && /[A-Z]{3}/.test(trimmed));
+      (trimmed.length < 70 && trimmed === trimmed.toUpperCase() && /[A-Z]{3}/.test(trimmed));
+
     if (isHeading) return `<span class="ch">${esc(trimmed)}</span>`;
-    // Preserve single newlines within paragraph as <br>
-    return esc(trimmed).replace(/\n/g, '<br>');
+
+    // Preserve mid-paragraph line breaks as single space (prose reflow)
+    return esc(trimmed).replace(/\n/g, ' ');
   }).filter(Boolean);
 
   bl.classList.remove('on');
   bt.style.display = 'block';
 
-  // Paginate based on actual rendered height
-  paginateByHeight(() => render(0));
+  // Wait one frame for layout to stabilise, then paginate
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => paginate(() => render(0)));
+  });
 }
 
-// ── Height-based pagination ──
-// We binary-search how many paragraphs fit in the page area without overflow.
-function paginateByHeight(done) {
-  const availH = pageArea.offsetHeight - 2; // -2px safety
+// ═══════════════════════════════════════════════
+// PAGINATION ENGINE
+// ═══════════════════════════════════════════════
+/*
+  Strategy:
+  1. Measure the EXACT pixel height available inside #page-area
+     (after subtracting bt's vertical padding).
+  2. Use an off-screen probe element (same styling as #bt) placed
+     inside #page-area so it inherits the correct width.
+  3. Binary-search how many paragraphs fit without exceeding availH.
+  4. Store {start, end} index pairs in `pages[]`.
 
+  The probe is absolutely positioned (visibility:hidden, pointer-events:none)
+  so it doesn't affect layout, but DOES inherit the correct computed width
+  from its parent. This is the most accurate approach for variable-width
+  layouts (e.g. mobile responsive).
+*/
+
+function paginate(done) {
+  if (paginating) return;
+  paginating = true;
   pages = [];
-  let idx = 0;
-  const total = allParagraphs.length;
 
-  // Use a hidden offscreen clone to measure
+  // How many px does the text region have?
+  const areaH = pageArea.offsetHeight;
+  // Subtract bt's top+bottom padding (18px each = 36px total)
+  const PAD_V = 18 * 2;
+  const availH = areaH - PAD_V;
+
+  if (availH <= 0 || !allParagraphs.length) {
+    // Fallback: put everything on one page
+    pages = [{ start: 0, end: allParagraphs.length }];
+    paginating = false;
+    done();
+    return;
+  }
+
+  // Build probe — same font/size/width/line-height as #bt, positioned out of view
   const probe = document.createElement('div');
+  probe.setAttribute('aria-hidden', 'true');
   probe.style.cssText = `
     position: absolute;
+    top: -9999px;
+    left: 0;
     visibility: hidden;
     pointer-events: none;
-    top: 0; left: 0;
-    width: ${bt.clientWidth}px;
-    font-family: var(--body, 'Lora', Georgia, serif);
+    width: ${bt.offsetWidth || pageArea.offsetWidth}px;
+    font-family: ${getComputedStyle(bt).fontFamily};
     font-size: ${fs}rem;
     line-height: 1.85;
-    padding: 18px 22px;
+    padding: 0;           /* we already subtracted padding from availH */
     box-sizing: border-box;
-    overflow: hidden;
-    background: white;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    overflow: hidden;
   `;
   pageArea.appendChild(probe);
 
-  // Resolve CSS variable font
-  probe.style.fontFamily = getComputedStyle(bt).fontFamily;
+  // Helper: measure height of a range of paragraphs
+  function measureRange(startIdx, count) {
+    probe.innerHTML = allParagraphs
+      .slice(startIdx, startIdx + count)
+      .map(p => `<div style="margin-bottom:0.7em;">${p}</div>`)
+      .join('');
+    return probe.scrollHeight;
+  }
+
+  const total = allParagraphs.length;
+  let idx = 0;
 
   while (idx < total) {
-    // Binary search: find max paragraphs that fit
-    let lo = 1, hi = total - idx, fit = 1;
+    const remaining = total - idx;
+
+    // Quick check: if all remaining fit on one page, no search needed
+    if (measureRange(idx, remaining) <= availH) {
+      pages.push({ start: idx, end: total });
+      break;
+    }
+
+    // Binary search for maximum fitting count
+    let lo = 1, hi = remaining, fit = 1;
     while (lo <= hi) {
       const mid = (lo + hi) >> 1;
-      probe.innerHTML = allParagraphs.slice(idx, idx + mid).join('<p style="margin:0 0 0.8em;">') ;
-      // wrap in p tags for spacing
-      probe.innerHTML = allParagraphs.slice(idx, idx + mid).map(p => `<div style="margin-bottom:0.7em;">${p}</div>`).join('');
-      if (probe.scrollHeight <= availH) { fit = mid; lo = mid + 1; }
-      else { hi = mid - 1; }
+      if (measureRange(idx, mid) <= availH) {
+        fit = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
     }
-    pages.push([idx, idx + fit]);
+
+    // Safety: always advance at least 1 paragraph to avoid infinite loop
+    if (fit < 1) fit = 1;
+
+    pages.push({ start: idx, end: idx + fit });
     idx += fit;
   }
 
   pageArea.removeChild(probe);
+  paginating = false;
   done();
 }
 
+// ═══════════════════════════════════════════════
+// RENDER  —  paint page N
+// ═══════════════════════════════════════════════
+
 function render(n) {
+  if (!pages.length) return;
+  n = Math.max(0, Math.min(n, pages.length - 1));
   cur = n;
-  const [start, end] = pages[n];
-  bt.innerHTML = allParagraphs.slice(start, end)
+
+  const { start, end } = pages[n];
+  bt.style.fontSize = `${fs}rem`;
+  bt.innerHTML = allParagraphs
+    .slice(start, end)
     .map(p => `<div style="margin-bottom:0.7em;">${p}</div>`)
     .join('');
-  bt.style.fontSize = `${fs}rem`;
 
-  pv.disabled = n === 0;
-  nx.disabled = n === pages.length - 1;
+  // Navigation
+  pv.disabled = (n === 0);
+  nx.disabled = (n === pages.length - 1);
   pi.textContent = `Page ${n + 1} of ${pages.length}`;
 
+  // Progress bar
   const pct = pages.length > 1 ? Math.round((n / (pages.length - 1)) * 100) : 100;
   pf.style.width = `${pct}%`;
   pp.textContent = `${pct}%`;
 }
 
-function err(m) {
+function showErr(m) {
   bl.classList.remove('on');
   bt.style.display = 'block';
-  bt.innerHTML = `<div style="color:#555;font-family:var(--mono);font-size:0.85rem;">[ ${esc(m)} ]</div>`;
+  bt.innerHTML = `<div style="color:#555;font-family:var(--mono);font-size:0.85rem;padding:20px;">[ ${esc(m)} ]</div>`;
 }
 
-// ── Navigation ──
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+
 pv.onclick = () => { if (cur > 0) render(cur - 1); };
 nx.onclick = () => { if (cur < pages.length - 1) render(cur + 1); };
 
@@ -659,12 +769,15 @@ $('back2').onclick = () => {
   ss.classList.remove('off');
 };
 
-// Touch swipe
-let tx = 0;
-rs.addEventListener('touchstart', ev => { tx = ev.changedTouches[0].clientX; }, { passive: true });
+// Touch swipe (left = next, right = prev)
+let touchStartX = 0;
+rs.addEventListener('touchstart', ev => {
+  touchStartX = ev.changedTouches[0].clientX;
+}, { passive: true });
+
 rs.addEventListener('touchend', ev => {
-  const dx = ev.changedTouches[0].clientX - tx;
-  if (Math.abs(dx) > 55) {
+  const dx = ev.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 50) {
     if (dx < 0 && cur < pages.length - 1) render(cur + 1);
     if (dx > 0 && cur > 0) render(cur - 1);
   }
@@ -673,45 +786,51 @@ rs.addEventListener('touchend', ev => {
 // Keyboard arrows
 document.addEventListener('keydown', e => {
   if (!rs.classList.contains('on')) return;
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { if (cur < pages.length - 1) render(cur + 1); }
-  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { if (cur > 0) render(cur - 1); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    if (cur < pages.length - 1) render(cur + 1);
+  }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    if (cur > 0) render(cur - 1);
+  }
 });
 
-// ── Font size ──
+// ═══════════════════════════════════════════════
+// FONT SIZE
+// ═══════════════════════════════════════════════
+
 $('fu').onclick = () => {
-  if (fs < 1.8) {
-    fs = +(fs + 0.1).toFixed(1);
-    repaginate();
-  }
+  if (fs < 1.8) { fs = +(fs + 0.1).toFixed(1); repaginate(); }
 };
 $('fd').onclick = () => {
-  if (fs > 0.7) {
-    fs = +(fs - 0.1).toFixed(1);
-    repaginate();
-  }
+  if (fs > 0.7) { fs = +(fs - 0.1).toFixed(1); repaginate(); }
 };
 
 function repaginate() {
   if (!allParagraphs.length) return;
-  paginateByHeight(() => render(Math.min(cur, pages.length - 1)));
+  // Re-run pagination, stay on same relative position
+  const savedCur = cur;
+  paginate(() => render(Math.min(savedCur, pages.length - 1)));
 }
 
-// Repaginate on resize (desktop window resize)
+// Re-paginate on window resize (desktop)
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     if (allParagraphs.length && rs.classList.contains('on')) repaginate();
-  }, 200);
+  }, 250);
 });
 
-// ── Utils ──
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+
 function esc(s) {
   return String(s)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 document.addEventListener('click', ev => {
