@@ -445,11 +445,6 @@ html, body {
 const API = 'https://gutendex.com/books/';
 const PRX = 'https://corsproxy.io/?';
 
-// Mirror these exactly from CSS #bt padding:
-const PAD_H = 22; // left + right each
-const PAD_V = 18; // top + bottom each
-const PARA_MB_EM = 0.7; // margin-bottom on each paragraph div
-
 const $ = id => document.getElementById(id);
 const ss=$('ss'), rs=$('rs'), si=$('si'), sug=$('sug'),
       smsg=$('smsg'), ld=$('ld'), rl=$('rl'), ra=$('ra'),
@@ -575,30 +570,44 @@ function bestUrl(f) {
 function processText(raw) {
   let t = raw;
 
+  // Strip Gutenberg header/footer
   const s = t.search(/\*{3}\s*START OF (THE|THIS) PROJECT GUTENBERG/i);
   if (s !== -1) t = t.slice(t.indexOf('\n', s) + 1);
   const en = t.search(/\*{3}\s*END OF (THE|THIS) PROJECT GUTENBERG/i);
   if (en !== -1) t = t.slice(0, en);
   t = t.trim();
 
-  const rawParas = t.split(/\n{2,}/);
+  // Split on blank lines first, then also split long single-newline blocks
+  // This handles TOC-style content that has no blank lines between entries
+  const chunks = [];
+  for (const block of t.split(/\n{2,}/)) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
+    const lines = trimmed.split('\n').map(l => l.trim()).filter(Boolean);
+    // If block is a single long run (like a TOC dumped on one line), split it into sentences
+    if (lines.length === 1 && lines[0].length > 300) {
+      // Split on sentence boundaries or chapter markers
+      const parts = lines[0]
+        .split(/(?<=\.) (?=[A-Z])|(?=CHAPTER [IVXLCDM]+\.)|(?=CHAPTER \d+)/)
+        .map(p => p.trim()).filter(Boolean);
+      chunks.push(...parts);
+    } else {
+      chunks.push(lines.join(' '));
+    }
+  }
 
-  allParagraphs = rawParas.map(p => {
-    const trimmed = p.trim();
-    if (!trimmed) return null;
-
+  allParagraphs = chunks.map(p => {
+    if (!p) return null;
     const isHeading =
-      /^(chapter|part|book|section|prologue|epilogue|preface|appendix)\s+/i.test(trimmed) ||
-      (trimmed.length < 70 && trimmed === trimmed.toUpperCase() && /[A-Z]{3}/.test(trimmed));
-
-    if (isHeading) return `<span class="ch">${esc(trimmed)}</span>`;
-    return esc(trimmed).replace(/\n/g, ' ');
+      /^(chapter|part|book|section|prologue|epilogue|preface|appendix)\b/i.test(p) ||
+      (p.length < 80 && p === p.toUpperCase() && /[A-Z]{3}/.test(p));
+    if (isHeading) return `<span class="ch">${esc(p)}</span>`;
+    return esc(p);
   }).filter(Boolean);
 
   bl.classList.remove('on');
   bt.style.display = 'block';
 
-  // Wait for layout to settle before paginating
   waitForLayout(() => paginate(() => render(0)));
 }
 
@@ -608,143 +617,89 @@ function waitForLayout(cb) {
     tries++;
     const h = pageArea.offsetHeight;
     const w = bt.offsetWidth || pageArea.offsetWidth;
-    if (h > 80 && w > 80) {
-      cb();
-    } else if (tries < 60) {
-      requestAnimationFrame(check);
-    } else {
-      cb(); // fallback
-    }
+    if (h > 80 && w > 80) { cb(); }
+    else if (tries < 60) { requestAnimationFrame(check); }
+    else { cb(); }
   }
   requestAnimationFrame(check);
 }
 
 // ═══════════════════════════════════════════════
-// PAGINATION ENGINE
+// PAGINATION ENGINE — overflow detection
 // ═══════════════════════════════════════════════
 /*
-  How it works:
-  ─────────────
-  1.  Compute availH = pageArea.offsetHeight − (PAD_V * 2)
-      This is the exact pixel budget for text content inside #bt.
+  Strategy: use #bt itself as the measurement container.
+  1. Set bt to its real dimensions (flex:1, overflow:hidden).
+  2. Add paragraphs one by one into bt.
+  3. After each addition, check if bt.scrollHeight > bt.clientHeight.
+     If it overflows → the PREVIOUS count was the page boundary.
+  4. Store indices, clear bt, repeat for next page.
 
-  2.  Create a probe <div> that is:
-        • appended as a SIBLING to #bt inside #page-area
-          (so it inherits the exact same computed width as #bt)
-        • position: absolute; top: -9999px → invisible, never affects layout
-        • styled identically to #bt (font, size, line-height, width, padding:0)
-          We strip padding because we measure content height only.
-
-  3.  For each page, binary-search the max number of paragraphs
-      whose rendered height ≤ availH.
-
-  4.  Store {start, end} indices in pages[].
-
-  The probe measures scrollHeight so even non-visible overflow is captured.
-  This guarantees we never under-fill (wasted space) or over-fill (clipped text).
+  This is the most accurate method possible — we're measuring
+  in the exact element that will render the final text, with
+  the exact same width, font, padding, and line-height.
+  No probe guesswork needed.
 */
 function paginate(done) {
   if (paginating) return;
   paginating = true;
   pages = [];
 
-  // ── Available content height ──
-  const areaH  = pageArea.offsetHeight;
-  const availH = areaH - (PAD_V * 2);
-
-  // ── Text column width (content area only, no padding) ──
-  // bt.clientWidth excludes padding. If not yet rendered, fall back.
-  const colW = (bt.clientWidth > 0 ? bt.clientWidth : bt.offsetWidth - PAD_H * 2) || 714;
-
-  // ── Font metrics from live bt element ──
-  const cs        = getComputedStyle(bt);
-  const fontFamily = cs.fontFamily;
-  const lineHeight = cs.lineHeight; // already computed px value
-  const fontSize   = `${fs}rem`;
-
-  // ── Paragraph margin in px ──
-  // PARA_MB_EM * fs rem converted to px
-  const rootFontPx  = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  const paraMarginPx = PARA_MB_EM * fs * rootFontPx;
-
-  if (availH <= 40 || !allParagraphs.length) {
-    // Fallback: fixed chunk size
-    const CHUNK = 6;
-    for (let i = 0; i < allParagraphs.length; i += CHUNK)
-      pages.push({ start: i, end: Math.min(i + CHUNK, allParagraphs.length) });
-    paginating = false;
-    done();
-    return;
-  }
-
-  // ── Build probe ──
-  // Absolute inside page-area → inherits correct width, invisible.
-  const probe = document.createElement('div');
-  probe.setAttribute('aria-hidden', 'true');
-  probe.style.cssText = [
-    'position:absolute',
-    'top:-99999px',
-    'left:0',
-    'visibility:hidden',
-    'pointer-events:none',
-    `width:${colW}px`,
-    `font-family:${fontFamily}`,
-    `font-size:${fontSize}`,
-    `line-height:${lineHeight}`,
-    'padding:0',
-    'margin:0',
-    'box-sizing:border-box',
-    'word-wrap:break-word',
-    'overflow-wrap:break-word',
-    'overflow:visible',
-    'white-space:normal',
-  ].join(';');
-  pageArea.appendChild(probe);
-
-  function paraHTML(idx) {
-    return `<div style="margin-bottom:${paraMarginPx}px">${allParagraphs[idx]}</div>`;
-  }
-
-  function measureRange(startIdx, count) {
-    let html = '';
-    for (let i = startIdx; i < startIdx + count; i++) html += paraHTML(i);
-    probe.innerHTML = html;
-    return probe.scrollHeight;
-  }
+  if (!allParagraphs.length) { paginating = false; done(); return; }
 
   const total = allParagraphs.length;
-  let idx = 0;
 
-  while (idx < total) {
-    const remaining = total - idx;
+  // Apply current font size before measuring
+  bt.style.fontSize = `${fs}rem`;
 
-    // Quick check: does everything remaining fit on one page?
-    if (measureRange(idx, remaining) <= availH) {
-      pages.push({ start: idx, end: total });
-      break;
-    }
+  // Build pages by filling bt and detecting overflow
+  let pageStart = 0;
 
-    // Binary search: largest count where content height ≤ availH
-    let lo = 1, hi = remaining, fit = 1;
-    while (lo <= hi) {
-      const mid = (lo + hi) >> 1;
-      if (measureRange(idx, mid) <= availH) {
-        fit = mid;
-        lo = mid + 1;
+  function buildPages() {
+    bt.innerHTML = '';
+    let i = pageStart;
+
+    while (i < total) {
+      // Add next paragraph
+      const div = document.createElement('div');
+      div.style.marginBottom = '0.7em';
+      div.innerHTML = allParagraphs[i];
+      bt.appendChild(div);
+
+      // Check overflow: scrollHeight > clientHeight means content exceeds visible area
+      if (bt.scrollHeight > bt.clientHeight + 1) {
+        // This paragraph caused overflow
+        if (i === pageStart) {
+          // Single paragraph already overflows — must include it alone
+          // (long paragraph, no choice). Accept it and move on.
+          pages.push({ start: pageStart, end: i + 1 });
+          pageStart = i + 1;
+          bt.innerHTML = '';
+          i = pageStart;
+        } else {
+          // Previous paragraph was the last that fit
+          pages.push({ start: pageStart, end: i });
+          pageStart = i;
+          bt.innerHTML = '';
+          // Don't increment i — retry this paragraph on the new page
+        }
       } else {
-        hi = mid - 1;
+        i++;
       }
     }
 
-    // Safety: always advance at least 1 paragraph to avoid infinite loop
-    if (fit < 1) fit = 1;
-    pages.push({ start: idx, end: idx + fit });
-    idx += fit;
+    // Remaining paragraphs form the last page
+    if (pageStart < total) {
+      pages.push({ start: pageStart, end: total });
+    }
+
+    bt.innerHTML = '';
+    paginating = false;
+    done();
   }
 
-  pageArea.removeChild(probe);
-  paginating = false;
-  done();
+  // Run in next frame so bt has its final layout dimensions
+  requestAnimationFrame(() => requestAnimationFrame(buildPages));
 }
 
 // ═══════════════════════════════════════════════
@@ -759,12 +714,9 @@ function render(n) {
   const { start, end } = pages[n];
   bt.style.fontSize = `${fs}rem`;
 
-  const rootFontPx  = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  const paraMarginPx = PARA_MB_EM * fs * rootFontPx;
-
   bt.innerHTML = allParagraphs
     .slice(start, end)
-    .map(p => `<div style="margin-bottom:${paraMarginPx}px">${p}</div>`)
+    .map(p => `<div style="margin-bottom:0.7em">${p}</div>`)
     .join('');
 
   pv.disabled = (n === 0);
@@ -828,10 +780,15 @@ $('fd').onclick = () => {
 function repaginate() {
   if (!allParagraphs.length) return;
   paginating = false;
-  // Apply new font size to bt BEFORE measuring, so probe uses same lineHeight
   bt.style.fontSize = `${fs}rem`;
   const savedCur = cur;
-  waitForLayout(() => paginate(() => render(Math.min(savedCur, pages.length - 1))));
+  // Find approximate position in text to restore reading position
+  const savedStart = pages[savedCur]?.start || 0;
+  paginate(() => {
+    // Find the page containing the saved paragraph index
+    const targetPage = pages.findIndex(p => p.end > savedStart);
+    render(Math.max(0, targetPage));
+  });
 }
 
 // Re-paginate on resize (desktop)
