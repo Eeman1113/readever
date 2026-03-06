@@ -615,10 +615,26 @@ function processText(raw) {
   bl.classList.remove('on');
   bt.style.display = 'block';
 
-  // Wait one frame for layout to stabilise, then paginate
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => paginate(() => render(0)));
-  });
+  // Wait for the reader screen to fully paint before measuring.
+  // We poll until pageArea has a real height (handles slow paints & font loads).
+  waitForLayout(() => paginate(() => render(0)));
+}
+
+function waitForLayout(cb) {
+  let tries = 0;
+  function check() {
+    tries++;
+    // pageArea must have real height AND bt must have real width
+    if (pageArea.offsetHeight > 100 && (bt.offsetWidth || pageArea.offsetWidth) > 100) {
+      cb();
+    } else if (tries < 40) {
+      requestAnimationFrame(check);
+    } else {
+      // Timeout fallback — force a measurement anyway
+      cb();
+    }
+  }
+  requestAnimationFrame(check);
 }
 
 // ═══════════════════════════════════════════════
@@ -644,48 +660,64 @@ function paginate(done) {
   paginating = true;
   pages = [];
 
-  // How many px does the text region have?
+  // ── Measure the available height ──
+  // pageArea is the flex child that holds #bt.
+  // Its offsetHeight is the pixel budget for text content.
+  // We subtract bt's top+bottom padding (18px × 2 = 36px).
+  const PAD_V = 36;
   const areaH = pageArea.offsetHeight;
-  // Subtract bt's top+bottom padding (18px each = 36px total)
-  const PAD_V = 18 * 2;
   const availH = areaH - PAD_V;
 
-  if (availH <= 0 || !allParagraphs.length) {
-    // Fallback: put everything on one page
-    pages = [{ start: 0, end: allParagraphs.length }];
+  // ── Measure the text column width ──
+  // bt.offsetWidth is reliable once bt is display:block inside a visible parent.
+  const colW = bt.offsetWidth || pageArea.offsetWidth || 714; // 758 - 2×22px padding
+
+  console.log('[paginate] areaH=', areaH, 'availH=', availH, 'colW=', colW);
+
+  if (availH <= 50 || !allParagraphs.length) {
+    // Something went wrong with measurement — split into fixed-size chunks as fallback
+    console.warn('[paginate] fallback: areaH too small or no paragraphs');
+    const CHUNK = 8;
+    for (let i = 0; i < allParagraphs.length; i += CHUNK) {
+      pages.push({ start: i, end: Math.min(i + CHUNK, allParagraphs.length) });
+    }
     paginating = false;
     done();
     return;
   }
 
-  // Build probe — same font/size/width/line-height as #bt, positioned out of view
+  // ── Build an off-screen probe ──
+  // Appended to document.body so it always has a real layout context.
+  // Position fixed + visibility hidden = invisible but fully laid out.
   const probe = document.createElement('div');
   probe.setAttribute('aria-hidden', 'true');
-  probe.style.cssText = `
-    position: absolute;
-    top: -9999px;
-    left: 0;
-    visibility: hidden;
-    pointer-events: none;
-    width: ${bt.offsetWidth || pageArea.offsetWidth}px;
-    font-family: ${getComputedStyle(bt).fontFamily};
-    font-size: ${fs}rem;
-    line-height: 1.85;
-    padding: 0;           /* we already subtracted padding from availH */
-    box-sizing: border-box;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    overflow: hidden;
-  `;
-  pageArea.appendChild(probe);
+  const computedFont = getComputedStyle(bt).fontFamily || "'Lora', Georgia, serif";
+  probe.style.cssText = [
+    'position: fixed',
+    'top: -9999px',
+    'left: -9999px',
+    'visibility: hidden',
+    'pointer-events: none',
+    `width: ${colW}px`,
+    `font-family: ${computedFont}`,
+    `font-size: ${fs}rem`,
+    'line-height: 1.85',
+    'padding: 0',
+    'margin: 0',
+    'box-sizing: border-box',
+    'word-wrap: break-word',
+    'overflow-wrap: break-word',
+    'overflow: visible',
+    'white-space: normal',
+  ].join(';');
+  document.body.appendChild(probe);
 
-  // Helper: measure height of a range of paragraphs
   function measureRange(startIdx, count) {
     probe.innerHTML = allParagraphs
       .slice(startIdx, startIdx + count)
       .map(p => `<div style="margin-bottom:0.7em;">${p}</div>`)
       .join('');
-    return probe.scrollHeight;
+    return probe.getBoundingClientRect().height || probe.scrollHeight;
   }
 
   const total = allParagraphs.length;
@@ -694,13 +726,13 @@ function paginate(done) {
   while (idx < total) {
     const remaining = total - idx;
 
-    // Quick check: if all remaining fit on one page, no search needed
+    // Quick check: does everything remaining fit?
     if (measureRange(idx, remaining) <= availH) {
       pages.push({ start: idx, end: total });
       break;
     }
 
-    // Binary search for maximum fitting count
+    // Binary search: find the max number of paragraphs that fit
     let lo = 1, hi = remaining, fit = 1;
     while (lo <= hi) {
       const mid = (lo + hi) >> 1;
@@ -712,14 +744,13 @@ function paginate(done) {
       }
     }
 
-    // Safety: always advance at least 1 paragraph to avoid infinite loop
-    if (fit < 1) fit = 1;
-
+    if (fit < 1) fit = 1; // never get stuck
     pages.push({ start: idx, end: idx + fit });
     idx += fit;
   }
 
-  pageArea.removeChild(probe);
+  document.body.removeChild(probe);
+  console.log('[paginate] total pages=', pages.length);
   paginating = false;
   done();
 }
@@ -807,7 +838,7 @@ $('fd').onclick = () => {
 
 function repaginate() {
   if (!allParagraphs.length) return;
-  // Re-run pagination, stay on same relative position
+  paginating = false; // reset lock so paginate() can run again
   const savedCur = cur;
   paginate(() => render(Math.min(savedCur, pages.length - 1)));
 }
