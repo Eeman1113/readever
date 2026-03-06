@@ -4,16 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Readever</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&family=IBM+Plex+Sans:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
   --k: #000;
   --w: #fff;
   --g: #555;
   --d: #bbb;
-  --ui:   'IBM Plex Sans', Arial, sans-serif;
+  --ui: 'IBM Plex Sans', Arial, sans-serif;
   --mono: 'IBM Plex Mono', monospace;
-  --body: Georgia, serif;
+  --body: 'Lora', Georgia, serif;
+
+  /* Kindle PW 11 logical canvas size */
+  --kw: 758px;
+  --kh: 1024px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -25,17 +29,40 @@ html, body {
   background-size: 6px 6px;
   image-rendering: pixelated;
   font-family: var(--ui);
-  font-size: 18px;
+  font-size: 16px;
   color: var(--k);
   overflow-x: hidden;
+  /* centre the kindle box on desktop */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px 0;
 }
 
-/* ── WINDOW ── */
-.win {
+/* ── KINDLE FRAME ── */
+/* On desktop: fixed Kindle size. On mobile: full width responsive */
+.kindle-frame {
+  width: var(--kw);
+  min-height: var(--kh);
   background: var(--w);
   border: 3px solid var(--k);
-  box-shadow: 5px 5px 0 var(--k);
-  margin: 16px 10px;
+  box-shadow: 7px 7px 0 var(--k);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  flex-shrink: 0;
+}
+
+@media (max-width: 800px) {
+  body { padding: 0; }
+  .kindle-frame {
+    width: 100vw;
+    min-height: 100vh;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+  }
 }
 
 /* ── TITLE BAR ── */
@@ -48,6 +75,7 @@ html, body {
   gap: 0;
   overflow: hidden;
   user-select: none;
+  flex-shrink: 0;
 }
 .tfill {
   flex: 1;
@@ -57,13 +85,13 @@ html, body {
 }
 .ttxt {
   font-family: var(--mono);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.07em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 58vw;
+  max-width: 52vw;
   padding: 0 8px;
   background: var(--w);
   z-index: 1;
@@ -74,13 +102,13 @@ html, body {
   background: var(--w);
   border: 3px solid var(--k);
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--k);
   cursor: pointer;
-  min-width: 52px;
-  min-height: 38px;
-  padding: 4px 10px;
+  min-width: 46px;
+  min-height: 36px;
+  padding: 4px 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -94,40 +122,43 @@ html, body {
 .btn:active { box-shadow:none; transform:translate(3px,3px); background:var(--k); color:var(--w); }
 .btn:disabled { color:var(--d); border-color:var(--d); box-shadow:none; pointer-events:none; }
 
-/* ── SEARCH SCREEN ── */
-#ss { min-height:100vh; display:flex; flex-direction:column; }
-#ss .win { flex:1; display:flex; flex-direction:column; min-height:calc(100vh - 32px); }
+/* ── SCREENS ── */
+#ss, #rs { display:flex; flex-direction:column; flex:1; }
+#ss.off { display:none; }
+#rs { display:none; }
+#rs.on { display:flex; }
 
+/* ══════════════ SEARCH SCREEN ══════════════ */
 .hero {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 28px 52vh;
+  padding: 30px 24px 40px;
 }
 .hero-sub {
   font-family: var(--ui);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 400;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   color: var(--g);
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .hero-title {
   font-family: var(--ui);
-  font-size: 54px;
+  font-size: 46px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin-bottom: 34px;
+  margin-bottom: 28px;
   line-height: 1;
 }
 
 /* Joined search bar */
 .sbar {
   width: 100%;
-  max-width: 460px;
+  max-width: 420px;
   display: flex;
   border: 3px solid var(--k);
   box-shadow: 4px 4px 0 var(--k);
@@ -138,9 +169,9 @@ html, body {
   border: none;
   outline: none;
   font-family: var(--ui);
-  font-size: 16px;
-  padding: 16px 14px;
-  min-height: 58px;
+  font-size: 15px;
+  padding: 14px 12px;
+  min-height: 52px;
   background: var(--w);
   color: var(--k);
   -webkit-appearance: none;
@@ -149,13 +180,13 @@ html, body {
   background: var(--k);
   border: none;
   border-left: 3px solid var(--k);
-  min-width: 62px;
-  min-height: 58px;
+  min-width: 56px;
+  min-height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 22px;
+  font-size: 20px;
   color: var(--w);
   flex-shrink: 0;
   position: relative;
@@ -169,77 +200,92 @@ html, body {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  right: -65px;
+  right: -59px;
   background: var(--w);
   border: 3px solid var(--k);
   box-shadow: 4px 4px 0 var(--k);
   z-index: 200;
-  max-height: 280px;
+  max-height: 260px;
   overflow-y: auto;
 }
 #sug.open { display: block; }
 .si {
-  padding: 14px;
+  padding: 12px;
   border-bottom: 2px solid var(--k);
   display: flex;
   align-items: baseline;
   gap: 8px;
-  min-height: 56px;
-  font-size: 15px;
+  min-height: 50px;
+  font-size: 14px;
   cursor: pointer;
 }
 .si:last-child { border-bottom: none; }
 .si:active { background: var(--k); color: var(--w); }
-.si-auth { font-size: 12px; color: var(--g); margin-left: auto; white-space: nowrap; font-style: italic; }
+.si-auth { font-size: 11px; color: var(--g); margin-left: auto; white-space: nowrap; font-style: italic; }
 .si:active .si-auth { color: var(--d); }
 
 /* Status + loader */
-#smsg { font-size: 14px; color: var(--g); margin-top: 10px; text-align: center; min-height: 20px; }
-.ld { display:none; align-items:center; gap:10px; justify-content:center; margin-top:14px; }
+#smsg { font-size: 13px; color: var(--g); margin-top: 10px; text-align: center; min-height: 18px; }
+.ld { display:none; align-items:center; gap:10px; justify-content:center; margin-top:12px; }
 .ld.on { display:flex; }
-.dot { width:10px; height:10px; background:var(--k); animation:bl 1s step-start infinite; }
+.dot { width:9px; height:9px; background:var(--k); animation:bl 1s step-start infinite; }
 .dot:nth-child(2){ animation-delay:.2s; }
 .dot:nth-child(3){ animation-delay:.4s; }
 @keyframes bl { 50%{ background:var(--d); } }
-.ld span { font-family:var(--mono); font-size:12px; letter-spacing:.06em; }
+.ld span { font-family:var(--mono); font-size:11px; letter-spacing:.06em; }
 
 /* Results area */
-.rarea { padding: 0 16px 20px; border-top: 3px solid var(--k); display:none; }
-.rarea.on { display:block; }
-.rhdr { font-family:var(--mono); font-size:11px; color:var(--g); letter-spacing:.1em; text-transform:uppercase; padding:10px 0 12px; }
-.ri {
-  border: 3px solid var(--k);
-  padding: 14px 12px;
-  margin-bottom: 8px;
+.rarea {
+  border-top: 3px solid var(--k);
+  display:none;
+  flex-direction: column;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.rarea.on { display:flex; }
+.rhdr {
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--g);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  padding:8px 14px;
+  border-bottom: 2px solid var(--k);
+  flex-shrink: 0;
   background: var(--w);
-  box-shadow: 3px 3px 0 var(--k);
-  min-height: 66px;
+  position: sticky;
+  top: 0;
+}
+.ri {
+  border-bottom: 2px solid var(--k);
+  padding: 12px 14px;
+  background: var(--w);
+  min-height: 58px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   cursor: pointer;
+  flex-shrink: 0;
 }
-.ri:active { background:var(--k); color:var(--w); box-shadow:none; transform:translate(3px,3px); }
+.ri:last-child { border-bottom: none; }
+.ri:active { background:var(--k); color:var(--w); }
 .ri:active .ri-m { color:var(--d); }
-.ri-t { font-size:16px; font-weight:700; }
-.ri-m { font-size:12px; color:var(--g); }
-.empty { display:none; border:3px dashed var(--k); padding:22px; text-align:center; font-size:14px; color:var(--g); }
+.ri-t { font-size:14px; font-weight:700; }
+.ri-m { font-size:11px; color:var(--g); }
+.empty { display:none; border:3px dashed var(--k); margin:14px; padding:20px; text-align:center; font-size:13px; color:var(--g); }
 .empty.on { display:block; }
 
-/* ── READER SCREEN ── */
-#rs { display:none; }
-#rs.on { display:block; }
-#ss.off { display:none; }
+/* ══════════════ READER SCREEN ══════════════ */
 
-/* Progress */
+/* Progress bar */
 .prog {
-  border: 3px solid var(--k);
-  height: 20px;
-  margin: 10px 12px 6px;
+  border-bottom: 3px solid var(--k);
+  height: 24px;
   background: var(--w);
   position: relative;
+  flex-shrink: 0;
 }
-.pf { height:100%; background:var(--k); width:0%; }
+.pf { height:100%; background:var(--k); width:0%; transition: width 0.2s; }
 .pt {
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
@@ -250,72 +296,90 @@ html, body {
 
 /* Font controls */
 .frow {
-  display:flex; gap:8px; align-items:center;
-  padding:7px 12px 9px;
+  display:flex; gap:6px; align-items:center;
+  padding:6px 10px;
   border-bottom: 2px dashed var(--k);
+  flex-shrink: 0;
 }
-.frow .btn { min-width:58px; min-height:42px; }
-.flbl { font-family:var(--mono); font-size:11px; color:var(--g); margin-right:auto; letter-spacing:.07em; }
+.frow .btn { min-width:50px; min-height:36px; }
+.flbl { font-family:var(--mono); font-size:10px; color:var(--g); margin-right:auto; letter-spacing:.07em; }
 
-/* Book */
-#bc { padding:12px; }
-#bl { display:none; padding:32px; text-align:center; font-family:var(--mono); font-size:13px; color:var(--g); letter-spacing:.06em; }
-#bl.on { display:block; }
+/* Book page container — this is the KEY part */
+/* It takes all remaining vertical space between controls and nav */
+#page-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* NO scroll ever */
+  position: relative;
+}
+
+#bl {
+  display: none;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--g);
+  letter-spacing: .06em;
+}
+#bl.on { display: flex; }
+
+/* The actual text page — fills the page-area, clips at edges */
 #bt {
   font-family: var(--body);
-  font-size: 1.05rem;
-  line-height: 2.0;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  border: 3px solid var(--k);
-  box-shadow: inset 3px 3px 0 var(--k);
-  padding: 18px 16px;
+  font-size: 1.0rem;
+  line-height: 1.85;
+  padding: 18px 22px;
+  flex: 1;
+  overflow: hidden; /* never scrolls — pagination handles flow */
+  display: block;
   background: var(--w);
+  color: var(--k);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
+
+/* Chapter heading inside text */
 .ch {
-  display:block;
-  font-family:var(--ui);
-  font-size:1em;
-  font-weight:700;
-  text-align:center;
-  letter-spacing:.16em;
-  text-transform:uppercase;
-  border-top:3px solid var(--k);
-  border-bottom:3px solid var(--k);
-  padding:8px 0;
-  margin:20px 0 12px;
+  display: block;
+  font-family: var(--ui);
+  font-size: 0.85em;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  border-top: 2px solid var(--k);
+  border-bottom: 2px solid var(--k);
+  padding: 7px 0;
+  margin: 14px 0 10px;
 }
 
 /* Nav */
 .nav {
   border-top: 3px solid var(--k);
-  padding: 10px 12px;
+  padding: 8px 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--w);
+  flex-shrink: 0;
 }
-.nav .btn { min-width:96px; min-height:54px; font-size:14px; }
-#pi { flex:1; text-align:center; font-family:var(--mono); font-size:12px; color:var(--g); letter-spacing:.06em; }
+.nav .btn { min-width:86px; min-height:46px; font-size:12px; }
+#pi { flex:1; text-align:center; font-family:var(--mono); font-size:11px; color:var(--g); letter-spacing:.06em; line-height:1.4; }
 
-::-webkit-scrollbar { width:8px; }
+::-webkit-scrollbar { width:6px; }
 ::-webkit-scrollbar-track { background:var(--w); border-left:2px solid var(--k); }
 ::-webkit-scrollbar-thumb { background:var(--k); }
 </style>
 </head>
 <body>
 
-<!-- SEARCH -->
-<div id="ss">
-  <div class="win">
-    <div class="tbar">
-      <button class="btn" style="min-width:36px;padding:0 5px;" onclick="void 0">✕</button>
-      <div class="tfill"></div>
-      <span class="ttxt">Readever</span>
-      <div class="tfill"></div>
-      <button class="btn" id="new-btn" style="min-width:46px;">NEW</button>
-    </div>
+<div class="kindle-frame">
 
+  <!-- ══ SEARCH SCREEN ══ -->
+  <div id="ss">
     <div class="hero">
       <div class="hero-sub">Welcome to</div>
       <div class="hero-title">Readever</div>
@@ -342,17 +406,12 @@ html, body {
       <div class="empty" id="em">[ No books found. Try another search. ]</div>
     </div>
   </div>
-</div>
 
-<!-- READER -->
-<div id="rs">
-  <div class="win">
+  <!-- ══ READER SCREEN ══ -->
+  <div id="rs">
     <div class="tbar">
-      <button class="btn" id="back" style="min-width:36px;padding:0 5px;">✕</button>
       <div class="tfill"></div>
-      <span class="ttxt" id="rt">...</span>
-      <div class="tfill"></div>
-      <button class="btn" id="back2" style="min-width:60px;font-size:12px;">← LIST</button>
+      <button class="btn" id="back2" style="min-width:54px;font-size:11px;">← LIST</button>
     </div>
 
     <div class="prog">
@@ -361,14 +420,15 @@ html, body {
     </div>
 
     <div class="frow">
-      <span class="flbl">SIZE</span>
+      <span class="flbl">FONT SIZE</span>
       <button class="btn" id="fd">A−</button>
       <button class="btn" id="fu">A+</button>
     </div>
 
-    <div id="bc">
+    <!-- This area fills all remaining space — no scroll -->
+    <div id="page-area">
       <div id="bl" class="on">[ Loading... ]</div>
-      <div id="bt"></div>
+      <div id="bt" style="display:none;"></div>
     </div>
 
     <div class="nav">
@@ -377,174 +437,286 @@ html, body {
       <button class="btn" id="nx" disabled>NEXT ►</button>
     </div>
   </div>
-</div>
+
+</div><!-- /.kindle-frame -->
 
 <script>
-const API='https://gutendex.com/books/';
-const PRX='https://corsproxy.io/?';
-const PG=3200;
+const API = 'https://gutendex.com/books/';
+const PRX = 'https://corsproxy.io/?';
 
-let T=null, pages=[], cur=0, fs=1.05;
-
-const $=id=>document.getElementById(id);
+// ── DOM refs ──
+const $ = id => document.getElementById(id);
 const ss=$('ss'), rs=$('rs'), si=$('si'), sug=$('sug'),
       smsg=$('smsg'), ld=$('ld'), rl=$('rl'), ra=$('ra'),
-      rh=$('rh'), em=$('em'), rt=$('rt'), bl=$('bl'),
+      rh=$('rh'), em=$('em'), bl=$('bl'),
       bt=$('bt'), pf=$('pf'), pp=$('pp'), pi=$('pi'),
-      pv=$('pv'), nx=$('nx');
+      pv=$('pv'), nx=$('nx'), pageArea=$('page-area');
 
-si.addEventListener('input',()=>{
-  const q=si.value.trim();
-  clearTimeout(T);
-  if(q.length<2){hideSug();return;}
-  T=setTimeout(()=>suggest(q),360);
-});
-si.addEventListener('keydown',e=>{if(e.key==='Enter'){hideSug();search();}});
-$('sb').addEventListener('click',()=>{hideSug();search();});
-$('new-btn').addEventListener('click',()=>{
-  si.value='';rl.innerHTML='';smsg.textContent='';
-  em.classList.remove('on');ra.classList.remove('on');rh.textContent='';
-});
+// ── State ──
+let debT = null;
+let allParagraphs = [];  // array of HTML strings (paragraphs/chunks)
+let pages = [];          // array of arrays of paragraph indices per page
+let cur = 0;
+let fs = 1.0;
 
-async function suggest(q){
-  try{
-    const d=await(await fetch(`${API}?search=${encodeURIComponent(q)}&page=1`)).json();
-    const items=(d.results||[]).slice(0,6);
-    if(!items.length){hideSug();return;}
-    sug.innerHTML='';
-    items.forEach(b=>{
-      const el=document.createElement('div');
-      el.className='si';
-      const a=b.authors[0]?.name||'';
-      el.innerHTML=`<span>${e(b.title)}</span><span class="si-auth">${e(a)}</span>`;
-      el.onclick=()=>{si.value=b.title;hideSug();openBook(b);};
+// ── Search ──
+si.addEventListener('input', () => {
+  const q = si.value.trim();
+  clearTimeout(debT);
+  if (q.length < 2) { hideSug(); return; }
+  debT = setTimeout(() => suggest(q), 360);
+});
+si.addEventListener('keydown', e => { if (e.key === 'Enter') { hideSug(); search(); } });
+$('sb').addEventListener('click', () => { hideSug(); search(); });
+
+async function suggest(q) {
+  try {
+    const d = await (await fetch(`${API}?search=${encodeURIComponent(q)}&page=1`)).json();
+    const items = (d.results || []).slice(0, 6);
+    if (!items.length) { hideSug(); return; }
+    sug.innerHTML = '';
+    items.forEach(b => {
+      const el = document.createElement('div');
+      el.className = 'si';
+      const a = b.authors[0]?.name || '';
+      el.innerHTML = `<span>${esc(b.title)}</span><span class="si-auth">${esc(a)}</span>`;
+      el.onclick = () => { si.value = b.title; hideSug(); openBook(b); };
       sug.appendChild(el);
     });
     sug.classList.add('open');
-  }catch(_){hideSug();}
+  } catch(_) { hideSug(); }
 }
-function hideSug(){sug.classList.remove('open');}
+function hideSug() { sug.classList.remove('open'); }
 
-async function search(){
-  const q=si.value.trim();if(!q)return;
-  rl.innerHTML='';em.classList.remove('on');ra.classList.remove('on');
-  ld.classList.add('on');smsg.textContent='';
-  try{
-    const d=await(await fetch(`${API}?search=${encodeURIComponent(q)}&page=1`)).json();
-    const books=d.results||[];
+async function search() {
+  const q = si.value.trim(); if (!q) return;
+  rl.innerHTML = ''; em.classList.remove('on'); ra.classList.remove('on');
+  ld.classList.add('on'); smsg.textContent = '';
+  try {
+    const d = await (await fetch(`${API}?search=${encodeURIComponent(q)}&page=1`)).json();
+    const books = d.results || [];
     ld.classList.remove('on');
     ra.classList.add('on');
-    if(!books.length){em.classList.add('on');return;}
-    rh.textContent=`${books.length} result${books.length>1?'s':''} found`;
-    books.forEach(b=>{
-      const el=document.createElement('div');
-      el.className='ri';
-      const a=b.authors.map(x=>x.name).join(', ')||'Unknown';
-      el.innerHTML=`<div class="ri-t">${e(b.title)}</div><div class="ri-m">${e(a)} · ${(b.download_count||0).toLocaleString()} reads</div>`;
-      el.onclick=()=>openBook(b);
+    if (!books.length) { em.classList.add('on'); return; }
+    rh.textContent = `${books.length} result${books.length > 1 ? 's' : ''} found`;
+    books.forEach(b => {
+      const el = document.createElement('div');
+      el.className = 'ri';
+      const a = b.authors.map(x => x.name).join(', ') || 'Unknown';
+      el.innerHTML = `<div class="ri-t">${esc(b.title)}</div><div class="ri-m">${esc(a)} · ${(b.download_count||0).toLocaleString()} reads</div>`;
+      el.onclick = () => openBook(b);
       rl.appendChild(el);
     });
-  }catch(_){
+  } catch(_) {
     ld.classList.remove('on');
-    smsg.textContent='Could not reach server.';
+    smsg.textContent = 'Could not reach server.';
     ra.classList.add('on');
   }
 }
 
-async function openBook(b){
-  rt.textContent=b.title;
-  bt.innerHTML='';bl.classList.add('on');
-  pages=[];cur=0;pv.disabled=true;nx.disabled=true;
-  pi.textContent='— / —';pf.style.width='0%';pp.textContent='0%';
-  ss.classList.add('off');rs.classList.add('on');
-  window.scrollTo(0,0);
-  const url=bestUrl(b.formats);
-  if(!url){err('No text version available.');return;}
-  try{
-    let txt=null;
-    try{const r=await fetch(url,{mode:'cors'});if(r.ok)txt=await r.text();}catch(_){}
-    if(!txt){const r=await fetch(PRX+encodeURIComponent(url));if(!r.ok)throw 0;txt=await r.text();}
-    process(txt);
-  }catch(_){err('Could not load. Check connection.');}
+// ── Open book ──
+async function openBook(b) {
+  bt.innerHTML = ''; bt.style.display = 'none';
+  bl.classList.add('on');
+  allParagraphs = []; pages = []; cur = 0;
+  pv.disabled = true; nx.disabled = true;
+  pi.textContent = '— / —';
+  pf.style.width = '0%'; pp.textContent = '0%';
+  ss.classList.add('off');
+  rs.classList.add('on');
+
+  const url = bestUrl(b.formats);
+  if (!url) { err('No text version available.'); return; }
+
+  try {
+    let txt = null;
+    try { const r = await fetch(url, { mode: 'cors' }); if (r.ok) txt = await r.text(); } catch(_) {}
+    if (!txt) {
+      const r = await fetch(PRX + encodeURIComponent(url));
+      if (!r.ok) throw 0;
+      txt = await r.text();
+    }
+    processText(txt);
+  } catch(_) { err('Could not load. Check connection.'); }
 }
 
-function bestUrl(f){
-  for(const m of['text/plain; charset=utf-8','text/plain; charset=us-ascii','text/plain'])if(f[m])return f[m];
-  const k=Object.keys(f).find(k=>k.startsWith('text/plain'));
-  return k?f[k]:null;
+function bestUrl(f) {
+  for (const m of ['text/plain; charset=utf-8','text/plain; charset=us-ascii','text/plain'])
+    if (f[m]) return f[m];
+  const k = Object.keys(f).find(k => k.startsWith('text/plain'));
+  return k ? f[k] : null;
 }
 
-function process(raw){
-  let t=raw;
-  const s=t.search(/\*\*\*\s*START OF (THE|THIS) PROJECT GUTENBERG[^\n]*/i);
-  if(s!==-1)t=t.slice(t.indexOf('\n',s)+1);
-  const en=t.search(/\*\*\*\s*END OF (THE|THIS) PROJECT GUTENBERG[^\n]*/i);
-  if(en!==-1)t=t.slice(0,en);
-  t=t.trim();
-  pages=paginate(t);
+// ── Process raw text → paragraphs ──
+function processText(raw) {
+  let t = raw;
+  const s = t.search(/\*\*\*\s*START OF (THE|THIS) PROJECT GUTENBERG[^\n]*/i);
+  if (s !== -1) t = t.slice(t.indexOf('\n', s) + 1);
+  const en = t.search(/\*\*\*\s*END OF (THE|THIS) PROJECT GUTENBERG[^\n]*/i);
+  if (en !== -1) t = t.slice(0, en);
+  t = t.trim();
+
+  // Split into logical paragraphs (separated by blank lines)
+  const rawParas = t.split(/\n{2,}/);
+  allParagraphs = rawParas.map(p => {
+    const trimmed = p.trim();
+    if (!trimmed) return null;
+    const isHeading =
+      /^(chapter|part|book|section|prologue|epilogue|preface|appendix)\s+/i.test(trimmed) ||
+      (trimmed.length < 60 && trimmed === trimmed.toUpperCase() && /[A-Z]{3}/.test(trimmed));
+    if (isHeading) return `<span class="ch">${esc(trimmed)}</span>`;
+    // Preserve single newlines within paragraph as <br>
+    return esc(trimmed).replace(/\n/g, '<br>');
+  }).filter(Boolean);
+
   bl.classList.remove('on');
-  render(0);
+  bt.style.display = 'block';
+
+  // Paginate based on actual rendered height
+  paginateByHeight(() => render(0));
 }
 
-function paginate(text){
-  const out=[];let s=0;
-  while(s<text.length){
-    let end=s+PG;
-    if(end>=text.length){out.push(text.slice(s));break;}
-    const seg=text.slice(end-200,end+200);
-    const p=seg.lastIndexOf('\n\n');
-    if(p!==-1)end=end-200+p+2;
-    else{const n=text.lastIndexOf('\n',end);if(n>s)end=n+1;}
-    out.push(text.slice(s,end));s=end;
+// ── Height-based pagination ──
+// We binary-search how many paragraphs fit in the page area without overflow.
+function paginateByHeight(done) {
+  const availH = pageArea.offsetHeight - 2; // -2px safety
+
+  pages = [];
+  let idx = 0;
+  const total = allParagraphs.length;
+
+  // Use a hidden offscreen clone to measure
+  const probe = document.createElement('div');
+  probe.style.cssText = `
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
+    top: 0; left: 0;
+    width: ${bt.clientWidth}px;
+    font-family: var(--body, 'Lora', Georgia, serif);
+    font-size: ${fs}rem;
+    line-height: 1.85;
+    padding: 18px 22px;
+    box-sizing: border-box;
+    overflow: hidden;
+    background: white;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  `;
+  pageArea.appendChild(probe);
+
+  // Resolve CSS variable font
+  probe.style.fontFamily = getComputedStyle(bt).fontFamily;
+
+  while (idx < total) {
+    // Binary search: find max paragraphs that fit
+    let lo = 1, hi = total - idx, fit = 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      probe.innerHTML = allParagraphs.slice(idx, idx + mid).join('<p style="margin:0 0 0.8em;">') ;
+      // wrap in p tags for spacing
+      probe.innerHTML = allParagraphs.slice(idx, idx + mid).map(p => `<div style="margin-bottom:0.7em;">${p}</div>`).join('');
+      if (probe.scrollHeight <= availH) { fit = mid; lo = mid + 1; }
+      else { hi = mid - 1; }
+    }
+    pages.push([idx, idx + fit]);
+    idx += fit;
   }
-  return out;
+
+  pageArea.removeChild(probe);
+  done();
 }
 
-function render(n){
-  cur=n;window.scrollTo(0,0);
-  const lines=(pages[n]||'').split('\n');
-  let h='';
-  for(const l of lines){
-    const t=l.trim();
-    if(!t){h+='\n';continue;}
-    const isH=/^(chapter|part|book|section|prologue|epilogue|preface)\s+/i.test(t)
-      ||(t.length<55&&t===t.toUpperCase()&&/[A-Z]{3}/.test(t));
-    h+=isH?`<span class="ch">${e(t)}</span>`:e(t)+'\n';
+function render(n) {
+  cur = n;
+  const [start, end] = pages[n];
+  bt.innerHTML = allParagraphs.slice(start, end)
+    .map(p => `<div style="margin-bottom:0.7em;">${p}</div>`)
+    .join('');
+  bt.style.fontSize = `${fs}rem`;
+
+  pv.disabled = n === 0;
+  nx.disabled = n === pages.length - 1;
+  pi.textContent = `Page ${n + 1} of ${pages.length}`;
+
+  const pct = pages.length > 1 ? Math.round((n / (pages.length - 1)) * 100) : 100;
+  pf.style.width = `${pct}%`;
+  pp.textContent = `${pct}%`;
+}
+
+function err(m) {
+  bl.classList.remove('on');
+  bt.style.display = 'block';
+  bt.innerHTML = `<div style="color:#555;font-family:var(--mono);font-size:0.85rem;">[ ${esc(m)} ]</div>`;
+}
+
+// ── Navigation ──
+pv.onclick = () => { if (cur > 0) render(cur - 1); };
+nx.onclick = () => { if (cur < pages.length - 1) render(cur + 1); };
+
+$('back2').onclick = () => {
+  rs.classList.remove('on');
+  ss.classList.remove('off');
+};
+
+// Touch swipe
+let tx = 0;
+rs.addEventListener('touchstart', ev => { tx = ev.changedTouches[0].clientX; }, { passive: true });
+rs.addEventListener('touchend', ev => {
+  const dx = ev.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 55) {
+    if (dx < 0 && cur < pages.length - 1) render(cur + 1);
+    if (dx > 0 && cur > 0) render(cur - 1);
   }
-  bt.innerHTML=h;
-  bt.style.fontSize=`${fs}rem`;
-  pv.disabled=n===0;
-  nx.disabled=n===pages.length-1;
-  pi.textContent=`${n+1} / ${pages.length}`;
-  const pct=pages.length>1?Math.round((n/(pages.length-1))*100):100;
-  pf.style.width=`${pct}%`;
-  pp.textContent=`${pct}%`;
-}
+}, { passive: true });
 
-function err(m){bl.classList.remove('on');bt.textContent=`[ ${m} ]`;}
-
-pv.onclick=()=>{if(cur>0)render(cur-1);};
-nx.onclick=()=>{if(cur<pages.length-1)render(cur+1);};
-[$('back'),$('back2')].forEach(b=>b.onclick=()=>{
-  rs.classList.remove('on');ss.classList.remove('off');window.scrollTo(0,0);
+// Keyboard arrows
+document.addEventListener('keydown', e => {
+  if (!rs.classList.contains('on')) return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { if (cur < pages.length - 1) render(cur + 1); }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { if (cur > 0) render(cur - 1); }
 });
 
-let tx=0;
-rs.addEventListener('touchstart',ev=>{tx=ev.changedTouches[0].clientX;},{passive:true});
-rs.addEventListener('touchend',ev=>{
-  const dx=ev.changedTouches[0].clientX-tx;
-  if(Math.abs(dx)>60){
-    if(dx<0&&cur<pages.length-1)render(cur+1);
-    if(dx>0&&cur>0)render(cur-1);
+// ── Font size ──
+$('fu').onclick = () => {
+  if (fs < 1.8) {
+    fs = +(fs + 0.1).toFixed(1);
+    repaginate();
   }
-},{passive:true});
+};
+$('fd').onclick = () => {
+  if (fs > 0.7) {
+    fs = +(fs - 0.1).toFixed(1);
+    repaginate();
+  }
+};
 
-$('fu').onclick=()=>{if(fs<2.0){fs=+(fs+0.1).toFixed(1);bt.style.fontSize=`${fs}rem`;}};
-$('fd').onclick=()=>{if(fs>0.7){fs=+(fs-0.1).toFixed(1);bt.style.fontSize=`${fs}rem`;}};
+function repaginate() {
+  if (!allParagraphs.length) return;
+  paginateByHeight(() => render(Math.min(cur, pages.length - 1)));
+}
 
-function e(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// Repaginate on resize (desktop window resize)
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (allParagraphs.length && rs.classList.contains('on')) repaginate();
+  }, 200);
+});
 
-document.addEventListener('click',ev=>{if(!ev.target.closest('.sbar'))hideSug();});
+// ── Utils ──
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+document.addEventListener('click', ev => {
+  if (!ev.target.closest('.sbar')) hideSug();
+});
 </script>
 </body>
 </html>
