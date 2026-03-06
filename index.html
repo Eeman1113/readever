@@ -92,12 +92,14 @@ html, body {
   flex: 1;
   height: 12px;
   background: repeating-linear-gradient(180deg,var(--k) 0 2px,var(--w) 2px 4px);
-  margin: 0 5px;
+  margin: 0 8px;
   display: flex;
   align-items: center;
+  padding: 0 6px;
+  gap: 8px;
 }
 .tb-progress {
-  width: 100%;
+  flex: 1;
   height: 4px;
   background: var(--d);
   border-radius: 2px;
@@ -114,7 +116,8 @@ html, body {
   font-size: 10px;
   font-weight: 700;
   color: var(--g);
-  margin: 0 5px;
+  min-width: 32px;
+  text-align: right;
 }
 
 /* ── BUTTONS ── */
@@ -458,8 +461,8 @@ html, body {
         <div class="tb-progress">
           <div class="tb-bar" id="pf"></div>
         </div>
+        <span class="tb-pct" id="pp">0%</span>
       </div>
-      <span class="tb-pct" id="pp">0%</span>
       <button class="btn" id="back2" style="min-width:54px;font-size:11px;">← LIST</button>
     </div>
 
