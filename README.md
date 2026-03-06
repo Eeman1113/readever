@@ -1,2 +1,3 @@
-# readever
-A light weight online reader for kindle
+Readever is a simple e-reader for Project Gutenberg books that mimics the Kindle Paperwhite 11 experience. It automatically paginates books so you get one page at a time with no scrolling. The app stays Kindle-sized on desktop monitors but goes full screen on mobile devices. You can search for books, adjust font size, and navigate with buttons or keyboard arrows.
+
+Built with vanilla HTML CSS and JavaScript, Readever is lightweight and fast. It handles Gutenberg text formatting by splitting long paragraphs and detecting chapter headings. The app uses a CORS proxy when needed to fetch book content from Gutenberg servers. Just open the HTML file in your browser, search for any public domain book, and start reading.
