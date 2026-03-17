@@ -4,13 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Readever</title>
+<!--
+  epub.js — loaded from CDN, same as ReKindle.
+  Gutenberg serves .epub files with CORS headers on their CDN.
+  This means zero proxies needed. Direct load, always works.
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 html, body {
-  width: 100%;
-  height: 100%;
-  min-height: 100vh;
+  width: 100%; height: 100%; min-height: 100vh;
   background-color: #888;
   background-image: conic-gradient(#000 25%, #fff 0 50%, #000 0 75%, #fff 0);
   background-size: 6px 6px;
@@ -18,274 +23,114 @@ html, body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  color: #000;
+  font-size: 16px; color: #000;
   overflow: hidden;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-align-items: center;
-          align-items: center;
-  -webkit-justify-content: center;
-          justify-content: center;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center;
 }
 
 .frame {
-  width: 618px;
-  height: 824px;
+  width: 618px; height: 824px;
   background: #fff;
   border: 3px solid #000;
-  -webkit-box-shadow: 7px 7px 0 #000;
-          box-shadow: 7px 7px 0 #000;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-flex-direction: column;
-          flex-direction: column;
-  overflow: hidden;
-  position: relative;
-  -webkit-flex-shrink: 0;
-          flex-shrink: 0;
+  -webkit-box-shadow: 7px 7px 0 #000; box-shadow: 7px 7px 0 #000;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-flex-direction: column; flex-direction: column;
+  overflow: hidden; position: relative;
+  -webkit-flex-shrink: 0; flex-shrink: 0;
 }
 
 @media (max-width: 700px) {
   html, body { overflow: hidden; }
-  .frame {
-    width: 100%;
-    height: 100vh;
-    border: none;
-    -webkit-box-shadow: none;
-            box-shadow: none;
-  }
+  .frame { width: 100%; height: 100vh; border: none; -webkit-box-shadow: none; box-shadow: none; }
 }
 
-/* ── TITLE BAR ── */
+/* ── TITLE BAR (reader only) ── */
 .tbar {
-  height: 46px;
-  border-bottom: 3px solid #000;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-align-items: center;
-          align-items: center;
-  padding: 0 6px;
-  gap: 6px;
-  overflow: hidden;
-  -webkit-user-select: none;
-          user-select: none;
-  -webkit-flex-shrink: 0;
-          flex-shrink: 0;
-  background: #fff;
+  height: 46px; border-bottom: 3px solid #000;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  padding: 0 6px; gap: 6px; overflow: hidden;
+  -webkit-user-select: none; user-select: none;
+  -webkit-flex-shrink: 0; flex-shrink: 0; background: #fff;
 }
-
 .tfill {
-  -webkit-flex: 1;
-          flex: 1;
-  height: 12px;
+  -webkit-flex: 1; flex: 1; height: 12px;
   background: repeating-linear-gradient(180deg, #000 0 2px, #fff 2px 4px);
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-align-items: center;
-          align-items: center;
-  padding: 0 6px;
-  gap: 8px;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  padding: 0 6px; gap: 8px;
 }
-.tb-track {
-  -webkit-flex: 1;
-          flex: 1;
-  height: 4px;
-  background: #bbb;
-  overflow: hidden;
-}
+.tb-track { -webkit-flex: 1; flex: 1; height: 4px; background: #bbb; overflow: hidden; }
 .tb-fill { height: 100%; background: #000; width: 0%; }
-.tb-pct {
-  font-family: "Courier New", Courier, monospace;
-  font-size: 10px;
-  font-weight: 700;
-  color: #555;
-  min-width: 32px;
-  text-align: right;
-  white-space: nowrap;
-}
+.tb-pct { font-family: "Courier New", monospace; font-size: 10px; font-weight: 700; color: #555; min-width: 32px; text-align: right; white-space: nowrap; }
 
 /* ── BUTTONS ── */
 .btn {
-  background: #fff;
-  border: 3px solid #000;
-  font-family: "Courier New", Courier, monospace;
-  font-size: 13px;
-  font-weight: 700;
-  color: #000;
-  cursor: pointer;
-  min-width: 46px;
-  min-height: 36px;
-  padding: 4px 8px;
-  display: -webkit-inline-box;
-  display: -webkit-inline-flex;
-  display: inline-flex;
-  -webkit-align-items: center;
-          align-items: center;
-  -webkit-justify-content: center;
-          justify-content: center;
-  -webkit-box-shadow: 3px 3px 0 #000;
-          box-shadow: 3px 3px 0 #000;
-  white-space: nowrap;
-  -webkit-flex-shrink: 0;
-          flex-shrink: 0;
-  letter-spacing: 0.04em;
-  position: relative;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  border-radius: 0;
+  background: #fff; border: 3px solid #000;
+  font-family: "Courier New", monospace; font-size: 13px; font-weight: 700; color: #000;
+  cursor: pointer; min-width: 46px; min-height: 36px; padding: 4px 8px;
+  display: -webkit-inline-box; display: -webkit-inline-flex; display: inline-flex;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center;
+  -webkit-box-shadow: 3px 3px 0 #000; box-shadow: 3px 3px 0 #000;
+  white-space: nowrap; -webkit-flex-shrink: 0; flex-shrink: 0;
+  letter-spacing: 0.04em; -webkit-appearance: none; appearance: none; border-radius: 0;
 }
-.btn:active {
-  -webkit-box-shadow: none;
-          box-shadow: none;
-  -webkit-transform: translate(3px, 3px);
-          transform: translate(3px, 3px);
-  background: #000;
-  color: #fff;
-}
+.btn:active { -webkit-box-shadow: none; box-shadow: none; -webkit-transform: translate(3px,3px); transform: translate(3px,3px); background: #000; color: #fff; }
 .btn:disabled { color: #bbb; border-color: #bbb; -webkit-box-shadow: none; box-shadow: none; pointer-events: none; }
 
 /* ── SCREENS ── */
-#ss {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-flex-direction: column;
-          flex-direction: column;
-  -webkit-flex: 1;
-          flex: 1;
-  min-height: 0;
-}
+#ss { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; -webkit-flex: 1; flex: 1; min-height: 0; }
 #ss.off { display: none; }
-#rs {
-  display: none;
-  -webkit-flex-direction: column;
-          flex-direction: column;
-  -webkit-flex: 1;
-          flex: 1;
-  min-height: 0;
-}
-#rs.on {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-}
+#rs { display: none; -webkit-flex-direction: column; flex-direction: column; -webkit-flex: 1; flex: 1; min-height: 0; }
+#rs.on { display: -webkit-box; display: -webkit-flex; display: flex; }
 
 /* ══ SEARCH SCREEN ══ */
 .hero {
-  -webkit-flex: 1;
-          flex: 1;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-flex-direction: column;
-          flex-direction: column;
-  -webkit-align-items: center;
-          align-items: center;
-  -webkit-justify-content: center;
-          justify-content: center;
-  padding: 30px 24px 36px;
-  overflow: hidden;
+  -webkit-flex: 1; flex: 1;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-flex-direction: column; flex-direction: column;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center;
+  padding: 30px 24px 36px; overflow: hidden;
 }
-.hero-sub {
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  color: #555;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-.hero-title {
-  font-size: 44px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-bottom: 26px;
-  line-height: 1;
-}
+.hero-sub { font-size: 11px; letter-spacing: 0.2em; color: #555; text-transform: uppercase; margin-bottom: 4px; }
+.hero-title { font-size: 44px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 26px; line-height: 1; }
 
 .sbar {
-  width: 100%;
-  max-width: 420px;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  border: 3px solid #000;
-  -webkit-box-shadow: 4px 4px 0 #000;
-          box-shadow: 4px 4px 0 #000;
+  width: 100%; max-width: 420px;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  border: 3px solid #000; -webkit-box-shadow: 4px 4px 0 #000; box-shadow: 4px 4px 0 #000;
   position: relative;
 }
 .sbar input {
-  -webkit-flex: 1;
-          flex: 1;
-  border: none;
-  outline: none;
+  -webkit-flex: 1; flex: 1; border: none; outline: none;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 15px;
-  padding: 14px 12px;
-  min-height: 52px;
-  background: #fff;
-  color: #000;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  border-radius: 0;
+  font-size: 15px; padding: 14px 12px; min-height: 52px;
+  background: #fff; color: #000;
+  -webkit-appearance: none; appearance: none; border-radius: 0;
 }
 .sbar-go {
-  background: #000;
-  border: none;
-  border-left: 3px solid #000;
-  min-width: 54px;
-  min-height: 52px;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-align-items: center;
-          align-items: center;
-  -webkit-justify-content: center;
-          justify-content: center;
-  cursor: pointer;
-  font-size: 20px;
-  color: #fff;
-  -webkit-flex-shrink: 0;
-          flex-shrink: 0;
-  -webkit-appearance: none;
-  appearance: none;
-  border-radius: 0;
+  background: #000; border: none; border-left: 3px solid #000;
+  min-width: 54px; min-height: 52px;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center;
+  cursor: pointer; font-size: 20px; color: #fff;
+  -webkit-flex-shrink: 0; flex-shrink: 0;
+  -webkit-appearance: none; appearance: none; border-radius: 0;
 }
 .sbar-go:active { background: #555; }
 
 #sug {
-  display: none;
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: -57px;
-  background: #fff;
-  border: 3px solid #000;
-  -webkit-box-shadow: 4px 4px 0 #000;
-          box-shadow: 4px 4px 0 #000;
-  z-index: 200;
-  max-height: 240px;
-  overflow-y: auto;
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: -57px;
+  background: #fff; border: 3px solid #000; -webkit-box-shadow: 4px 4px 0 #000; box-shadow: 4px 4px 0 #000;
+  z-index: 200; max-height: 240px; overflow-y: auto;
 }
 #sug.open { display: block; }
-.si {
-  padding: 12px;
-  border-bottom: 2px solid #000;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-align-items: baseline;
-          align-items: baseline;
-  gap: 8px;
-  min-height: 48px;
-  font-size: 14px;
-  cursor: pointer;
-}
+.si { padding: 12px; border-bottom: 2px solid #000; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: baseline; align-items: baseline; gap: 8px; min-height: 48px; font-size: 14px; cursor: pointer; }
 .si:last-child { border-bottom: none; }
 .si:active { background: #000; color: #fff; }
 .si-auth { font-size: 11px; color: #555; margin-left: auto; white-space: nowrap; font-style: italic; }
@@ -296,162 +141,71 @@ html, body {
 .ld { display: none; -webkit-align-items: center; align-items: center; gap: 10px; -webkit-justify-content: center; justify-content: center; margin-top: 12px; }
 .ld.on { display: -webkit-box; display: -webkit-flex; display: flex; }
 .dot { width: 9px; height: 9px; background: #000; -webkit-animation: bl 1s step-start infinite; animation: bl 1s step-start infinite; }
-.dot:nth-child(2) { -webkit-animation-delay: .2s; animation-delay: .2s; }
-.dot:nth-child(3) { -webkit-animation-delay: .4s; animation-delay: .4s; }
-@-webkit-keyframes bl { 50% { background: #bbb; } }
-@keyframes bl { 50% { background: #bbb; } }
+.dot:nth-child(2) { -webkit-animation-delay:.2s; animation-delay:.2s; }
+.dot:nth-child(3) { -webkit-animation-delay:.4s; animation-delay:.4s; }
+@-webkit-keyframes bl { 50%{ background:#bbb; } }
+@keyframes bl { 50%{ background:#bbb; } }
 .ld span { font-family: "Courier New", monospace; font-size: 11px; letter-spacing: .06em; }
 
-.rarea {
-  border-top: 3px solid #000;
-  display: none;
-  -webkit-flex-direction: column;
-          flex-direction: column;
-  overflow-y: auto;
-  -webkit-flex-shrink: 0;
-          flex-shrink: 0;
-  max-height: 52%;
-}
+.rarea { border-top: 3px solid #000; display: none; -webkit-flex-direction: column; flex-direction: column; overflow-y: auto; -webkit-flex-shrink: 0; flex-shrink: 0; max-height: 52%; }
 .rarea.on { display: -webkit-box; display: -webkit-flex; display: flex; }
-.rhdr {
-  font-family: "Courier New", monospace;
-  font-size: 10px;
-  color: #555;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  padding: 8px 14px;
-  border-bottom: 2px solid #000;
-  -webkit-flex-shrink: 0;
-          flex-shrink: 0;
-  background: #fff;
-  position: -webkit-sticky;
-  position: sticky;
-  top: 0;
-}
-.ri {
-  border-bottom: 2px solid #000;
-  padding: 12px 14px;
-  background: #fff;
-  min-height: 58px;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-flex-direction: column;
-          flex-direction: column;
-  gap: 2px;
-  cursor: pointer;
-  -webkit-flex-shrink: 0;
-          flex-shrink: 0;
-}
+.rhdr { font-family: "Courier New", monospace; font-size: 10px; color: #555; letter-spacing: .1em; text-transform: uppercase; padding: 8px 14px; border-bottom: 2px solid #000; -webkit-flex-shrink: 0; flex-shrink: 0; background: #fff; position: -webkit-sticky; position: sticky; top: 0; }
+.ri { border-bottom: 2px solid #000; padding: 12px 14px; background: #fff; min-height: 58px; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; gap: 2px; cursor: pointer; -webkit-flex-shrink: 0; flex-shrink: 0; }
 .ri:last-child { border-bottom: none; }
 .ri:active { background: #000; color: #fff; }
 .ri:active .ri-m { color: #bbb; }
 .ri:active .ri-badge { border-color: #fff; color: #fff; }
 .ri-t { font-size: 14px; font-weight: 700; }
 .ri-m { font-size: 11px; color: #555; }
-.ri-badge {
-  display: inline-block;
-  font-family: "Courier New", monospace;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: .06em;
-  border: 2px solid #000;
-  padding: 1px 5px;
-  margin-top: 3px;
-  -webkit-align-self: flex-start;
-          align-self: flex-start;
-}
+.ri-badge { display: inline-block; font-family: "Courier New", monospace; font-size: 9px; font-weight: 700; letter-spacing: .06em; border: 2px solid #000; padding: 1px 5px; margin-top: 3px; -webkit-align-self: flex-start; align-self: flex-start; }
 .empty { display: none; border: 3px dashed #000; margin: 14px; padding: 20px; text-align: center; font-size: 13px; color: #555; }
 .empty.on { display: block; }
 
 /* ══ READER SCREEN ══ */
+
+/*
+  #viewer — epub.js renders into this div via an iframe it creates.
+  We size it to fill all space between tbar and nav.
+  epub.js handles its own pagination internally — no custom paginator needed.
+*/
 #page-area {
-  -webkit-flex: 1;
-          flex: 1;
+  -webkit-flex: 1; flex: 1;
   min-height: 0;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-flex-direction: column;
-          flex-direction: column;
-  overflow: hidden;
   position: relative;
   background: #fff;
+  overflow: hidden;
+}
+
+/* epub.js injects an iframe here */
+#viewer {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0; left: 0;
 }
 
 #bl {
-  display: none;
-  -webkit-flex: 1;
-          flex: 1;
-  -webkit-align-items: center;
-          align-items: center;
-  -webkit-justify-content: center;
-          justify-content: center;
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  -webkit-justify-content: center; justify-content: center;
   font-family: "Courier New", monospace;
-  font-size: 12px;
-  color: #555;
-  letter-spacing: .06em;
+  font-size: 12px; color: #555; letter-spacing: .06em;
+  background: #fff; z-index: 10;
+  text-align: center; padding: 20px;
 }
-#bl.on { display: -webkit-box; display: -webkit-flex; display: flex; }
-
-/*
-  #bt — visible page. Never scrolls.
-  Padding values mirrored in JS as PAD_TOP/PAD_SIDE.
-*/
-#bt {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.0rem;
-  line-height: 1.8;
-  padding: 18px 20px;
-  -webkit-flex: 1;
-          flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  display: none;
-  background: #fff;
-  color: #000;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
-.ch {
-  display: block;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 0.82em;
-  font-weight: 700;
-  text-align: center;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  border-top: 2px solid #000;
-  border-bottom: 2px solid #000;
-  padding: 7px 0;
-  margin: 12px 0 10px;
-}
+#bl.off { display: none; }
 
 .nav {
-  border-top: 3px solid #000;
-  padding: 8px 10px;
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-align-items: center;
-          align-items: center;
-  gap: 6px;
-  background: #fff;
-  -webkit-flex-shrink: 0;
-          flex-shrink: 0;
+  border-top: 3px solid #000; padding: 8px 10px;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center;
+  gap: 6px; background: #fff;
+  -webkit-flex-shrink: 0; flex-shrink: 0;
 }
 .nav .btn { min-width: 86px; min-height: 46px; font-size: 12px; }
-#pi {
-  -webkit-flex: 1;
-          flex: 1;
-  text-align: center;
-  font-family: "Courier New", monospace;
-  font-size: 11px;
-  color: #555;
-  letter-spacing: .06em;
-  line-height: 1.4;
-}
+#pi { -webkit-flex: 1; flex: 1; text-align: center; font-family: "Courier New", monospace; font-size: 11px; color: #555; letter-spacing: .06em; line-height: 1.4; }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #fff; border-left: 2px solid #000; }
@@ -459,7 +213,6 @@ html, body {
 </style>
 </head>
 <body>
-
 <div class="frame">
 
   <!-- ══ SEARCH SCREEN ══ -->
@@ -467,7 +220,6 @@ html, body {
     <div class="hero">
       <div class="hero-sub">Welcome to</div>
       <div class="hero-title">Readever</div>
-
       <div class="sbar">
         <div style="position:relative;-webkit-flex:1;flex:1;display:-webkit-box;display:-webkit-flex;display:flex;">
           <input id="si" type="text" placeholder="what do you want to read?"
@@ -476,16 +228,14 @@ html, body {
         </div>
         <button class="sbar-go" id="sb">&#8594;</button>
       </div>
-
       <div id="smsg"></div>
       <div class="ld" id="ld">
         <div style="display:-webkit-box;display:-webkit-flex;display:flex;gap:5px;">
           <div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
-        <span>Searching...</span>
+        <span id="ldmsg">Searching...</span>
       </div>
     </div>
-
     <div class="rarea" id="ra">
       <div class="rhdr" id="rh"></div>
       <div id="rl"></div>
@@ -506,8 +256,8 @@ html, body {
     </div>
 
     <div id="page-area">
-      <div id="bl" class="on">[ Loading... ]</div>
-      <div id="bt"></div>
+      <div id="bl">[ Loading book... ]</div>
+      <div id="viewer"></div>
     </div>
 
     <div class="nav">
@@ -518,488 +268,371 @@ html, body {
   </div>
 
 </div>
-
 <script>
 /*
-  Readever — Kindle-optimised build
-  ─────────────────────────────────
-  Changes from previous version:
-  - XHR replaces fetch() — no {mode:'cors'} that breaks old Webkit
-  - No Google Fonts import — system fonts only, no render-blocking request
-  - No async/await — plain callbacks and XHR.onreadystatechange
-  - No dvh/svh — height:100vh only
-  - No CSS custom property transitions
-  - No off-screen probe element sitting in DOM — created, used, destroyed
-  - Synchronous pagination loop (no rAF chains) — faster on slow CPUs
-  - waitLayout uses setTimeout instead of rAF — more reliable on old Webkit
-  - All localStorage wrapped in try/catch
-  - E-ink flash refresh every 15 page turns (ReKindle pattern)
-  - Prefixed flexbox throughout CSS for old Webkit
+  Readever — ReKindle approach for Gutenberg
+  ──────────────────────────────────────────
+  ReKindle loads books as EPUBs via epub.js, not raw .txt files.
+  Gutenberg's CDN (gutenberg.org/cache/epub/) serves .epub files
+  with correct CORS headers — no proxy ever needed.
+
+  epub.js handles:
+    - Parsing and rendering the EPUB internally
+    - Pagination (page-by-page navigation)
+    - Font size changes
+    - Progress tracking (CFI locations)
+
+  We just wire up the UI around it.
 */
 'use strict';
 
 var API      = 'https://gutendex.com/books/';
-var PRX      = 'https://corsproxy.io/?';
-var SAVE_KEY = 'readever_v2';
+var SAVE_KEY = 'readever_v3';
 
-function gid(id) { return document.getElementById(id); }
+function gid(id){ return document.getElementById(id); }
 
-var ss   = gid('ss'),  rs   = gid('rs'),  si   = gid('si');
-var sug  = gid('sug'), smsg = gid('smsg'), ldEl = gid('ld');
-var rl   = gid('rl'),  ra   = gid('ra'),  rh   = gid('rh');
-var em   = gid('em'),  bl   = gid('bl'),  bt   = gid('bt');
-var pf   = gid('pf'),  pp   = gid('pp'),  pi   = gid('pi');
-var pv   = gid('pv'),  nx   = gid('nx'),  pa   = gid('page-area');
+var ss=gid('ss'), rs=gid('rs'), si=gid('si'), sug=gid('sug');
+var smsg=gid('smsg'), ldEl=gid('ld'), ldmsg=gid('ldmsg');
+var rl=gid('rl'), ra=gid('ra'), rh=gid('rh'), em=gid('em');
+var bl=gid('bl'), pf=gid('pf'), pp=gid('pp');
+var pi=gid('pi'), pv=gid('pv'), nx=gid('nx');
 
-var paras   = [];
-var pages   = [];
-var cur     = 0;
-var fs      = 1.0;
-var bookId  = null;
-var busy    = false;
-var debT    = null;
-var touchX  = 0;
+var book       = null;   /* epub.js Book instance */
+var rendition  = null;   /* epub.js Rendition instance */
+var bookId     = null;
+var fontSize   = 100;    /* percent */
+var debT       = null;
+var touchX     = 0;
 
-/* ══════════════════════════════
-   PROGRESS
-   ══════════════════════════════ */
-
-function pLoad() {
-  try { return JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'); }
-  catch(e) { return {}; }
+/* ── PROGRESS ── */
+function pLoad(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'{}'); }catch(e){ return {}; } }
+function pSave(bid, cfi){
+  try{
+    var d=pLoad(); d[bid]={cfi:cfi,t:Date.now()};
+    var keys=Object.keys(d).sort(function(a,b){ return (d[b].t||0)-(d[a].t||0); });
+    if(keys.length>40){ for(var i=40;i<keys.length;i++) delete d[keys[i]]; }
+    localStorage.setItem(SAVE_KEY,JSON.stringify(d));
+  }catch(e){}
 }
-function pSave(bid, page) {
-  try {
-    var d = pLoad();
-    d[bid] = { p: page, t: Date.now() };
-    var keys = Object.keys(d).sort(function(a,b){ return (d[b].t||0)-(d[a].t||0); });
-    if (keys.length > 40) { for (var i=40;i<keys.length;i++) delete d[keys[i]]; }
-    localStorage.setItem(SAVE_KEY, JSON.stringify(d));
-  } catch(e) {}
-}
-function pGet(bid) {
-  try { var d = pLoad(); return d[bid] ? (d[bid].p || 0) : 0; }
-  catch(e) { return 0; }
-}
+function pGet(bid){ try{ var d=pLoad(); return d[bid]?d[bid].cfi||null:null; }catch(e){ return null; } }
 
-/* ══════════════════════════════
-   SEARCH — XHR only, no fetch
-   ══════════════════════════════ */
-
-si.addEventListener('input', function() {
-  var q = si.value.trim();
-  clearTimeout(debT);
-  if (q.length < 2) { hideSug(); return; }
-  debT = setTimeout(function(){ suggest(q); }, 400);
-});
-si.addEventListener('keydown', function(e) {
-  if ((e.key || '') === 'Enter' || e.keyCode === 13) { hideSug(); doSearch(); }
-});
-gid('sb').addEventListener('click', function() { hideSug(); doSearch(); });
-
-function hideSug() { sug.className = ''; }
-
-function xhr(url, cb) {
-  var x = new XMLHttpRequest();
-  x.open('GET', url, true);
-  x.onreadystatechange = function() {
-    if (x.readyState !== 4) return;
-    cb(x.status === 200 ? x.responseText : null);
+/* ── XHR helper (search only) ── */
+function xhr(url, cb){
+  var x=new XMLHttpRequest();
+  x.open('GET',url,true);
+  x.timeout=15000;
+  x.onreadystatechange=function(){
+    if(x.readyState!==4) return;
+    cb((x.status===200||x.status===0)&&x.responseText?x.responseText:null);
   };
-  x.onerror = function() { cb(null); };
+  x.onerror=function(){ cb(null); };
+  x.ontimeout=function(){ cb(null); };
   x.send();
 }
 
-function suggest(q) {
-  xhr(API + '?search=' + encodeURIComponent(q) + '&page=1', function(txt) {
-    if (!txt) { hideSug(); return; }
-    try {
-      var d = JSON.parse(txt);
-      var items = (d.results || []).slice(0, 5);
-      if (!items.length) { hideSug(); return; }
-      sug.innerHTML = '';
-      for (var i = 0; i < items.length; i++) {
-        (function(b) {
-          var el = document.createElement('div');
-          el.className = 'si';
-          var a = b.authors && b.authors[0] ? b.authors[0].name : '';
-          el.innerHTML = '<span>' + esc(b.title) + '</span>' +
-            '<span class="si-auth">' + esc(a) + '</span>';
-          el.onclick = function() { si.value = b.title; hideSug(); openBook(b); };
+/* ── SEARCH ── */
+si.addEventListener('input',function(){
+  var q=si.value.trim(); clearTimeout(debT);
+  if(q.length<2){ hideSug(); return; }
+  debT=setTimeout(function(){ suggest(q); },400);
+});
+si.addEventListener('keydown',function(e){
+  if((e.key||'')==='Enter'||e.keyCode===13){ hideSug(); doSearch(); }
+});
+gid('sb').addEventListener('click',function(){ hideSug(); doSearch(); });
+
+function hideSug(){ sug.className=''; }
+
+function suggest(q){
+  xhr(API+'?search='+encodeURIComponent(q)+'&page=1',function(txt){
+    if(!txt){ hideSug(); return; }
+    try{
+      var d=JSON.parse(txt), items=(d.results||[]).slice(0,5);
+      if(!items.length){ hideSug(); return; }
+      sug.innerHTML='';
+      for(var i=0;i<items.length;i++){
+        (function(b){
+          var el=document.createElement('div');
+          el.className='si';
+          var a=b.authors&&b.authors[0]?b.authors[0].name:'';
+          el.innerHTML='<span>'+esc(b.title)+'</span><span class="si-auth">'+esc(a)+'</span>';
+          el.onclick=function(){ si.value=b.title; hideSug(); openBook(b); };
           sug.appendChild(el);
         })(items[i]);
       }
-      sug.className = 'open';
-    } catch(e) { hideSug(); }
+      sug.className='open';
+    }catch(e){ hideSug(); }
   });
 }
 
-function doSearch() {
-  var q = si.value.trim();
-  if (!q) return;
-  rl.innerHTML = '';
-  em.className = 'empty';
-  ra.className = 'rarea';
-  ldEl.className = 'ld on';
-  smsg.textContent = '';
+function doSearch(){
+  var q=si.value.trim(); if(!q) return;
+  rl.innerHTML=''; em.className='empty'; ra.className='rarea';
+  ldmsg.textContent='Searching\u2026'; ldEl.className='ld on'; smsg.textContent='';
 
-  xhr(API + '?search=' + encodeURIComponent(q) + '&page=1', function(txt) {
-    ldEl.className = 'ld';
-    ra.className = 'rarea on';
-
-    if (!txt) { smsg.textContent = 'Could not reach server. Check connection.'; return; }
-
-    try {
-      var d = JSON.parse(txt);
-      var books = d.results || [];
-      if (!books.length) { em.className = 'empty on'; return; }
-
-      rh.textContent = books.length + ' result' + (books.length > 1 ? 's' : '') + ' found';
-      var prog = pLoad();
-      var frag = document.createDocumentFragment();
-
-      for (var i = 0; i < books.length; i++) {
-        (function(b) {
-          var el = document.createElement('div');
-          el.className = 'ri';
-          var a = b.authors && b.authors.length
-            ? b.authors.map(function(x){ return x.name; }).join(', ')
-            : 'Unknown';
-          var bid = String(b.id);
-          var saved = prog[bid] && prog[bid].p > 0;
-          el.innerHTML =
-            '<div class="ri-t">' + esc(b.title) + '</div>' +
-            '<div class="ri-m">' + esc(a) + ' &middot; ' +
-              ((b.download_count||0).toLocaleString()) + ' reads</div>' +
-            (saved ? '<span class="ri-badge">Resume p.' + (prog[bid].p + 1) + '</span>' : '');
-          el.onclick = function() { openBook(b); };
+  xhr(API+'?search='+encodeURIComponent(q)+'&page=1',function(txt){
+    ldEl.className='ld'; ra.className='rarea on';
+    if(!txt){ smsg.textContent='Could not reach server. Check connection.'; return; }
+    try{
+      var d=JSON.parse(txt), books=d.results||[];
+      if(!books.length){ em.className='empty on'; return; }
+      rh.textContent=books.length+' result'+(books.length>1?'s':'')+' found';
+      var prog=pLoad(), frag=document.createDocumentFragment();
+      for(var i=0;i<books.length;i++){
+        (function(b){
+          var el=document.createElement('div'); el.className='ri';
+          var a=b.authors&&b.authors.length?b.authors.map(function(x){return x.name;}).join(', '):'Unknown';
+          var bid=String(b.id), saved=!!(prog[bid]&&prog[bid].cfi);
+          el.innerHTML='<div class="ri-t">'+esc(b.title)+'</div>'+
+            '<div class="ri-m">'+esc(a)+' &middot; '+((b.download_count||0).toLocaleString())+' reads</div>'+
+            (saved?'<span class="ri-badge">Resume</span>':'');
+          el.onclick=function(){ openBook(b); };
           frag.appendChild(el);
         })(books[i]);
       }
       rl.appendChild(frag);
-    } catch(e) { smsg.textContent = 'Error reading results.'; }
+    }catch(e){ smsg.textContent='Error reading results.'; }
   });
 }
 
-/* ══════════════════════════════
-   OPEN BOOK
-   ══════════════════════════════ */
+/* ── OPEN BOOK ── */
+/*
+  epub.js Book URL strategy — same logic ReKindle uses:
 
-function openBook(b) {
-  bookId = String(b.id);
-  paras = []; pages = []; cur = 0; busy = false;
-  bt.innerHTML = '';
-  bt.style.display = 'none';
-  bl.className = 'on';
-  pv.disabled = true;
-  nx.disabled = true;
-  pi.textContent = '\u2014 / \u2014';
-  pf.style.width = '0%';
-  pp.textContent = '0%';
+  Gutenberg CDN epub URL pattern (always available, CORS-enabled):
+    https://www.gutenberg.org/cache/epub/{id}/pg{id}-images.epub
+    https://www.gutenberg.org/cache/epub/{id}/pg{id}.epub
 
-  ss.className = 'off';
-  rs.className = 'on';
+  Also check formats object from gutendex for epub mime type as first choice.
+  epub.js fetches and unzips the file itself using JSZip.
+  No proxy. No raw text. No CORS issues.
+*/
+function openBook(b){
+  bookId=String(b.id);
 
-  var url = bestUrl(b.formats);
-  if (!url) { showErr('No text version available.'); return; }
+  /* Destroy any existing epub.js instance */
+  if(rendition){ try{ rendition.destroy(); }catch(e){} rendition=null; }
+  if(book){ try{ book.destroy(); }catch(e){} book=null; }
 
-  xhr(url, function(txt) {
-    if (txt && txt.length > 100) { processText(txt); return; }
-    /* Proxy fallback */
-    xhr(PRX + encodeURIComponent(url), function(txt2) {
-      if (txt2 && txt2.length > 100) { processText(txt2); }
-      else { showErr('Could not load book. Check connection.'); }
-    });
+  /* Reset UI */
+  bl.className=''; /* show loading overlay */
+  bl.textContent='[ Loading book\u2026 ]';
+  pv.disabled=true; nx.disabled=true;
+  pi.textContent='\u2014 / \u2014';
+  pf.style.width='0%'; pp.textContent='0%';
+  gid('viewer').innerHTML='';
+
+  ss.className='off'; rs.className='on';
+
+  /* Build epub URL list, prefer formats object, fallback to known CDN patterns */
+  var epubUrl = bestEpubUrl(b.formats);
+  var cdnUrl1 = 'https://www.gutenberg.org/cache/epub/'+bookId+'/pg'+bookId+'-images.epub';
+  var cdnUrl2 = 'https://www.gutenberg.org/cache/epub/'+bookId+'/pg'+bookId+'.epub';
+
+  /* Use CDN url as primary if formats didn't give us one, or use formats url */
+  var primaryUrl = epubUrl || cdnUrl1;
+
+  loadEpub(primaryUrl, function(ok){
+    if(!ok){
+      /* Try alternate CDN pattern */
+      loadEpub(cdnUrl2, function(ok2){
+        if(!ok2) showErr('Could not load book.\nThe EPUB file is unavailable.\nTry a different book.');
+      });
+    }
   });
 }
 
-function bestUrl(f) {
-  var order = ['text/plain; charset=utf-8','text/plain; charset=us-ascii','text/plain'];
-  for (var i = 0; i < order.length; i++) { if (f[order[i]]) return f[order[i]]; }
-  var keys = Object.keys(f);
-  for (var j = 0; j < keys.length; j++) { if (keys[j].indexOf('text/plain') === 0) return f[keys[j]]; }
+function bestEpubUrl(f){
+  /* Prefer epub with images, then plain epub */
+  var mimes=[
+    'application/epub+zip',
+    'application/epub'
+  ];
+  for(var i=0;i<mimes.length;i++){
+    if(f[mimes[i]]) return f[mimes[i]];
+  }
+  /* Scan for any epub key */
+  var keys=Object.keys(f);
+  for(var j=0;j<keys.length;j++){
+    if(keys[j].indexOf('epub')!==-1) return f[keys[j]];
+  }
   return null;
 }
 
-/* ══════════════════════════════
-   TEXT PROCESSING
-   ══════════════════════════════ */
+function loadEpub(url, cb){
+  try{
+    bl.textContent='[ Downloading\u2026 ]';
 
-function processText(raw) {
-  var t = raw;
-  var s = t.search(/\*{3}\s*START OF (THE|THIS) PROJECT GUTENBERG/i);
-  if (s !== -1) t = t.slice(t.indexOf('\n', s) + 1);
-  var en = t.search(/\*{3}\s*END OF (THE|THIS) PROJECT GUTENBERG/i);
-  if (en !== -1) t = t.slice(0, en);
-  t = t.trim();
+    book = ePub(url);
 
-  var rawParas = t.split(/\n{2,}/);
-  paras = [];
+    book.ready.then(function(){
+      bl.textContent='[ Rendering\u2026 ]';
 
-  for (var i = 0; i < rawParas.length; i++) {
-    var trimmed = rawParas[i].trim();
-    if (!trimmed || trimmed.length < 2) continue;
+      /* epub.js Rendition — paginated mode */
+      rendition = book.renderTo('viewer', {
+        method:   'paginated',
+        width:    '100%',
+        height:   '100%',
+        spread:   'none',
+        flow:     'paginated'
+      });
 
-    var isHeader =
-      /^(CHAPTER|PART|BOOK|SECTION|PROLOGUE|EPILOGUE|PREFACE|APPENDIX|VOLUME)\b/i.test(trimmed) ||
-      (trimmed.length < 100 &&
-       trimmed === trimmed.toUpperCase() &&
-       /[A-Z]{3}/.test(trimmed) &&
-       !/[.;]/.test(trimmed));
+      /* Apply font size */
+      rendition.themes.fontSize(fontSize+'%');
 
-    if (isHeader) {
-      paras.push('<span class="ch">' + esc(trimmed) + '</span>');
-      continue;
-    }
+      /* Style the epub content to match our aesthetic */
+      rendition.themes.register('readever', {
+        'body': {
+          'font-family': 'Georgia, "Times New Roman", serif !important',
+          'line-height': '1.8 !important',
+          'color':       '#000 !important',
+          'background':  '#fff !important'
+        }
+      });
+      rendition.themes.select('readever');
 
-    /* Reconstruct soft-wrapped lines */
-    var lines = trimmed.split('\n');
-    var joined = '';
-    for (var j = 0; j < lines.length; j++) {
-      var line = lines[j].trim();
-      if (!line) continue;
-      if (!joined) { joined = line; continue; }
-      var endsClean = /[.!?"'\)\]\u2014]$/.test(joined);
-      var startsUpper = /^[A-Z"'\(\[]/.test(line);
-      if (endsClean && startsUpper) { pushPara(joined); joined = line; }
-      else { joined += ' ' + line; }
-    }
-    if (joined) pushPara(joined);
-  }
+      /* Restore saved position or start from beginning */
+      var savedCfi = pGet(bookId);
+      var displayPromise = savedCfi
+        ? rendition.display(savedCfi)
+        : rendition.display();
 
-  bl.className = '';
-  bt.style.display = 'block';
+      displayPromise.then(function(){
+        bl.className='off';
+        pv.disabled=false; nx.disabled=false;
+        updateProgress();
+        cb(true);
+      }).catch(function(){
+        /* CFI might be stale — start from beginning */
+        rendition.display().then(function(){
+          bl.className='off';
+          pv.disabled=false; nx.disabled=false;
+          updateProgress();
+          cb(true);
+        });
+      });
 
-  /* Wait for layout before paginating */
-  waitLayout(function() {
-    paginate(function() {
-      render(pGet(bookId));
+      /* Track location changes */
+      rendition.on('relocated', function(location){
+        updateProgress(location);
+        /* Save CFI for resume */
+        if(location && location.start && location.start.cfi){
+          pSave(bookId, location.start.cfi);
+        }
+        pv.disabled = location.atStart;
+        nx.disabled = location.atEnd;
+
+        /* E-ink flash every ~15 pages */
+        einkFlash();
+      });
+
+      /* Forward key events from epub iframe to our handler */
+      rendition.on('keydown', function(e){
+        handleKey(e.key || '', e.keyCode || 0);
+      });
+
+    }).catch(function(err){
+      cb(false);
     });
-  });
-}
 
-function pushPara(text) {
-  if (text.length <= 360) { paras.push(esc(text)); return; }
-  var sentences = text.match(/[^.!?]+[.!?]+['")\]]?\s*/g) || [text];
-  var chunk = '';
-  for (var i = 0; i < sentences.length; i++) {
-    var s = sentences[i];
-    if ((chunk + s).length > 340 && chunk) {
-      paras.push(esc(chunk.trim()));
-      chunk = s;
-    } else { chunk += s; }
+    book.on('openFailed', function(){
+      cb(false);
+    });
+
+  }catch(e){
+    cb(false);
   }
-  if (chunk.trim()) paras.push(esc(chunk.trim()));
 }
 
-function waitLayout(cb) {
-  var tries = 0;
-  function check() {
-    tries++;
-    if ((pa.offsetHeight > 80 && bt.offsetWidth > 80) || tries >= 30) { cb(); }
-    else { setTimeout(check, 60); }
-  }
-  setTimeout(check, 80);
-}
-
-/* ══════════════════════════════
-   PAGINATION ENGINE
-
-   Creates a temporary hidden div inside #page-area
-   (so it inherits real rendered width), fills it with
-   paragraphs, checks scrollHeight overflow, records
-   page boundaries, then destroys the div.
-
-   Synchronous — no rAF chains. Fast on slow CPUs.
-   ══════════════════════════════ */
-
-function paginate(done) {
-  if (busy) return;
-  busy = true;
-  pages = [];
-
-  if (!paras.length) { busy = false; done(); return; }
-
-  /* Temporary measure container */
-  var m = document.createElement('div');
-  m.style.cssText = [
-    'position:absolute',
-    'top:0',
-    'left:0',
-    'visibility:hidden',
-    'pointer-events:none',
-    'font-family:Georgia,"Times New Roman",serif',
-    'font-size:' + fs + 'rem',
-    'line-height:1.8',
-    'padding:18px 20px',
-    'word-wrap:break-word',
-    'overflow-wrap:break-word',
-    'overflow:hidden',
-    'background:#fff',
-    'width:' + pa.offsetWidth + 'px',
-    'height:' + pa.offsetHeight + 'px'
-  ].join(';');
-
-  pa.appendChild(m);
-
-  var total     = paras.length;
-  var pageStart = 0;
-  var i         = pageStart;
-
-  while (i < total) {
-    var div = document.createElement('div');
-    div.style.marginBottom = '0.7em';
-    div.innerHTML = paras[i];
-    m.appendChild(div);
-
-    if (m.scrollHeight > m.clientHeight + 2) {
-      if (i === pageStart) {
-        /* Paragraph alone fills the page — accept it */
-        pages.push({ start: pageStart, end: i + 1 });
-        pageStart = i + 1;
-      } else {
-        /* Overflow caused by this paragraph — end page before it */
-        pages.push({ start: pageStart, end: i });
-        pageStart = i;
+function updateProgress(location){
+  try{
+    var pct = 0;
+    if(book && book.locations && book.locations.percentageFromCfi){
+      if(location && location.start && location.start.cfi){
+        pct = Math.round(book.locations.percentageFromCfi(location.start.cfi) * 100);
       }
-      m.innerHTML = '';
-      i = pageStart;
-    } else {
-      i++;
     }
-  }
-
-  if (pageStart < total) pages.push({ start: pageStart, end: total });
-  if (!pages.length)     pages.push({ start: 0, end: total });
-
-  pa.removeChild(m);
-  busy = false;
-  done();
+    pf.style.width = pct+'%';
+    pp.textContent = pct+'%';
+    if(location){
+      var cur = location.start && location.start.displayed ? location.start.displayed.page : '?';
+      var tot = location.start && location.start.displayed ? location.start.displayed.total : '?';
+      pi.textContent = 'Page '+cur+' of '+tot;
+    }
+  }catch(e){}
 }
 
-/* ══════════════════════════════
-   RENDER
-   ══════════════════════════════ */
+/* ── NAVIGATION ── */
+pv.onclick=function(){ if(rendition) rendition.prev(); };
+nx.onclick=function(){ if(rendition) rendition.next(); };
 
-function render(n) {
-  if (!pages.length) return;
-  n = n < 0 ? 0 : n >= pages.length ? pages.length - 1 : n;
-  cur = n;
+gid('back2').onclick=function(){
+  if(rendition){ try{ rendition.destroy(); }catch(e){} rendition=null; }
+  if(book){ try{ book.destroy(); }catch(e){} book=null; }
+  rs.className=''; ss.className='';
+};
 
-  var sl = pages[n];
-  bt.style.fontSize = fs + 'rem';
+/* Touch swipe — on the page-area div (epub is in an iframe, so we capture on wrapper) */
+gid('page-area').addEventListener('touchstart',function(ev){
+  touchX=ev.changedTouches[0].clientX;
+},{passive:true});
+gid('page-area').addEventListener('touchend',function(ev){
+  var dx=ev.changedTouches[0].clientX-touchX;
+  if(dx<-50&&rendition) rendition.next();
+  if(dx>50&&rendition)  rendition.prev();
+},{passive:true});
 
-  var html = '';
-  for (var i = sl.start; i < sl.end; i++) {
-    html += '<div style="margin-bottom:0.7em">' + paras[i] + '</div>';
-  }
-  bt.innerHTML = html;
+document.addEventListener('keydown',function(e){
+  if(rs.className.indexOf('on')===-1) return;
+  handleKey(e.key||'', e.keyCode||0);
+});
 
-  pv.disabled = (n === 0);
-  nx.disabled = (n === pages.length - 1);
-  pi.textContent = 'Page ' + (n + 1) + ' of ' + pages.length;
-
-  var pct = pages.length > 1 ? Math.round((n / (pages.length - 1)) * 100) : 100;
-  pf.style.width = pct + '%';
-  pp.textContent = pct + '%';
-
-  if (bookId) pSave(bookId, n);
-
-  /* E-ink flash every 15 turns — ReKindle pattern */
-  if (n > 0 && n % 15 === 0) einkFlash();
+function handleKey(key, code){
+  if(key==='ArrowRight'||key==='ArrowDown'||code===39||code===40){ if(rendition) rendition.next(); }
+  if(key==='ArrowLeft' ||key==='ArrowUp'  ||code===37||code===38){ if(rendition) rendition.prev(); }
 }
 
-function einkFlash() {
-  try {
-    var mode = localStorage.getItem('rekindle_display_mode') || '';
-    if (mode === 'screen') return;
-  } catch(e) {}
-  var f = document.createElement('div');
-  f.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;pointer-events:none;';
+/* ── FONT SIZE ── */
+gid('fu').onclick=function(){
+  if(fontSize<180){ fontSize+=10; applyFontSize(); }
+};
+gid('fd').onclick=function(){
+  if(fontSize>70){ fontSize-=10; applyFontSize(); }
+};
+function applyFontSize(){
+  if(rendition) rendition.themes.fontSize(fontSize+'%');
+}
+
+/* ── E-INK FLASH ── */
+var lastFlash=0;
+function einkFlash(){
+  /* Throttle — at most once every 30 seconds */
+  var now=Date.now();
+  if(now-lastFlash<30000) return;
+  lastFlash=now;
+  try{ var m=localStorage.getItem('rekindle_display_mode')||''; if(m==='screen') return; }catch(e){}
+  var f=document.createElement('div');
+  f.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;pointer-events:none;';
   document.body.appendChild(f);
-  /* Force reflow so the black frame actually paints */
   void f.offsetWidth;
-  setTimeout(function() { if (f.parentNode) f.parentNode.removeChild(f); }, 400);
+  setTimeout(function(){ if(f.parentNode) f.parentNode.removeChild(f); },400);
 }
 
-function showErr(msg) {
-  bl.className = '';
-  bt.style.display = 'block';
-  bt.innerHTML = '<div style="padding:24px;text-align:center;font-family:\'Courier New\',monospace;font-size:0.85rem;color:#555;">[ ' + esc(msg) + ' ]</div>';
+/* ── ERROR ── */
+function showErr(msg){
+  bl.className='';
+  bl.innerHTML=msg.replace(/\n/g,'<br>');
 }
 
-/* ══════════════════════════════
-   NAVIGATION
-   ══════════════════════════════ */
-
-pv.onclick = function() { if (cur > 0) render(cur - 1); };
-nx.onclick = function() { if (cur < pages.length - 1) render(cur + 1); };
-
-gid('back2').onclick = function() { rs.className = ''; ss.className = ''; };
-
-rs.addEventListener('touchstart', function(ev) {
-  touchX = ev.changedTouches[0].clientX;
-}, { passive: true });
-rs.addEventListener('touchend', function(ev) {
-  var dx = ev.changedTouches[0].clientX - touchX;
-  if (dx < -50 && cur < pages.length - 1) render(cur + 1);
-  if (dx >  50 && cur > 0)               render(cur - 1);
-}, { passive: true });
-
-document.addEventListener('keydown', function(e) {
-  if (rs.className.indexOf('on') === -1) return;
-  var k = e.key || '';
-  if (k === 'ArrowRight' || k === 'ArrowDown' || e.keyCode === 39 || e.keyCode === 40) {
-    if (cur < pages.length - 1) render(cur + 1);
-  }
-  if (k === 'ArrowLeft' || k === 'ArrowUp' || e.keyCode === 37 || e.keyCode === 38) {
-    if (cur > 0) render(cur - 1);
-  }
+/* ── CLOSE SUGGESTIONS ── */
+document.addEventListener('click',function(ev){
+  if(!ev.target.closest||!ev.target.closest('.sbar')) hideSug();
 });
 
-/* ══════════════════════════════
-   FONT SIZE
-   ══════════════════════════════ */
-
-gid('fu').onclick = function() {
-  if (fs < 1.8) { fs = Math.round((fs + 0.1) * 10) / 10; repaginate(); }
-};
-gid('fd').onclick = function() {
-  if (fs > 0.7) { fs = Math.round((fs - 0.1) * 10) / 10; repaginate(); }
-};
-
-function repaginate() {
-  if (!paras.length) return;
-  busy = false;
-  var savedStart = pages[cur] ? pages[cur].start : 0;
-  paginate(function() {
-    var target = 0;
-    for (var i = 0; i < pages.length; i++) {
-      if (pages[i].end > savedStart) { target = i; break; }
-    }
-    render(target);
-  });
-}
-
-var resizeT;
-window.addEventListener('resize', function() {
-  clearTimeout(resizeT);
-  resizeT = setTimeout(function() {
-    if (paras.length && rs.className.indexOf('on') !== -1) repaginate();
-  }, 350);
-});
-
-document.addEventListener('click', function(ev) {
-  if (!ev.target.closest || !ev.target.closest('.sbar')) hideSug();
-});
-
-/* ══════════════════════════════
-   UTILS
-   ══════════════════════════════ */
-
-function esc(s) {
-  return String(s).replace(/[&<"]/g, function(m) {
-    return { '&': '&amp;', '<': '&lt;', '"': '&quot;' }[m];
+/* ── UTILS ── */
+function esc(s){
+  return String(s).replace(/[&<"]/g,function(m){
+    return{'&':'&amp;','<':'&lt;','"':'&quot;'}[m];
   });
 }
 </script>
