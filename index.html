@@ -4,11 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Readever</title>
-<!--
-  epub.js — loaded from CDN, same as ReKindle.
-  Gutenberg serves .epub files with CORS headers on their CDN.
-  This means zero proxies needed. Direct load, always works.
--->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
 <style>
@@ -23,16 +18,14 @@ html, body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 16px; color: #000;
-  overflow: hidden;
+  font-size: 16px; color: #000; overflow: hidden;
   display: -webkit-box; display: -webkit-flex; display: flex;
   -webkit-align-items: center; align-items: center;
   -webkit-justify-content: center; justify-content: center;
 }
 
 .frame {
-  width: 618px; height: 824px;
-  background: #fff;
+  width: 618px; height: 824px; background: #fff;
   border: 3px solid #000;
   -webkit-box-shadow: 7px 7px 0 #000; box-shadow: 7px 7px 0 #000;
   display: -webkit-box; display: -webkit-flex; display: flex;
@@ -46,7 +39,6 @@ html, body {
   .frame { width: 100%; height: 100vh; border: none; -webkit-box-shadow: none; box-shadow: none; }
 }
 
-/* ── TITLE BAR (reader only) ── */
 .tbar {
   height: 46px; border-bottom: 3px solid #000;
   display: -webkit-box; display: -webkit-flex; display: flex;
@@ -66,7 +58,6 @@ html, body {
 .tb-fill { height: 100%; background: #000; width: 0%; }
 .tb-pct { font-family: "Courier New", monospace; font-size: 10px; font-weight: 700; color: #555; min-width: 32px; text-align: right; white-space: nowrap; }
 
-/* ── BUTTONS ── */
 .btn {
   background: #fff; border: 3px solid #000;
   font-family: "Courier New", monospace; font-size: 13px; font-weight: 700; color: #000;
@@ -81,13 +72,11 @@ html, body {
 .btn:active { -webkit-box-shadow: none; box-shadow: none; -webkit-transform: translate(3px,3px); transform: translate(3px,3px); background: #000; color: #fff; }
 .btn:disabled { color: #bbb; border-color: #bbb; -webkit-box-shadow: none; box-shadow: none; pointer-events: none; }
 
-/* ── SCREENS ── */
 #ss { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; -webkit-flex: 1; flex: 1; min-height: 0; }
 #ss.off { display: none; }
 #rs { display: none; -webkit-flex-direction: column; flex-direction: column; -webkit-flex: 1; flex: 1; min-height: 0; }
 #rs.on { display: -webkit-box; display: -webkit-flex; display: flex; }
 
-/* ══ SEARCH SCREEN ══ */
 .hero {
   -webkit-flex: 1; flex: 1;
   display: -webkit-box; display: -webkit-flex; display: flex;
@@ -141,8 +130,8 @@ html, body {
 .ld { display: none; -webkit-align-items: center; align-items: center; gap: 10px; -webkit-justify-content: center; justify-content: center; margin-top: 12px; }
 .ld.on { display: -webkit-box; display: -webkit-flex; display: flex; }
 .dot { width: 9px; height: 9px; background: #000; -webkit-animation: bl 1s step-start infinite; animation: bl 1s step-start infinite; }
-.dot:nth-child(2) { -webkit-animation-delay:.2s; animation-delay:.2s; }
-.dot:nth-child(3) { -webkit-animation-delay:.4s; animation-delay:.4s; }
+.dot:nth-child(2){ -webkit-animation-delay:.2s; animation-delay:.2s; }
+.dot:nth-child(3){ -webkit-animation-delay:.4s; animation-delay:.4s; }
 @-webkit-keyframes bl { 50%{ background:#bbb; } }
 @keyframes bl { 50%{ background:#bbb; } }
 .ld span { font-family: "Courier New", monospace; font-size: 11px; letter-spacing: .06em; }
@@ -161,39 +150,19 @@ html, body {
 .empty { display: none; border: 3px dashed #000; margin: 14px; padding: 20px; text-align: center; font-size: 13px; color: #555; }
 .empty.on { display: block; }
 
-/* ══ READER SCREEN ══ */
-
-/*
-  #viewer — epub.js renders into this div via an iframe it creates.
-  We size it to fill all space between tbar and nav.
-  epub.js handles its own pagination internally — no custom paginator needed.
-*/
 #page-area {
-  -webkit-flex: 1; flex: 1;
-  min-height: 0;
-  position: relative;
-  background: #fff;
-  overflow: hidden;
+  -webkit-flex: 1; flex: 1; min-height: 0;
+  position: relative; background: #fff; overflow: hidden;
 }
-
-/* epub.js injects an iframe here */
-#viewer {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0; left: 0;
-}
-
+#viewer { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 #bl {
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   display: -webkit-box; display: -webkit-flex; display: flex;
   -webkit-align-items: center; align-items: center;
   -webkit-justify-content: center; justify-content: center;
-  font-family: "Courier New", monospace;
-  font-size: 12px; color: #555; letter-spacing: .06em;
-  background: #fff; z-index: 10;
-  text-align: center; padding: 20px;
+  font-family: "Courier New", monospace; font-size: 12px; color: #555;
+  letter-spacing: .06em; background: #fff; z-index: 10;
+  text-align: center; padding: 20px; line-height: 1.6;
 }
 #bl.off { display: none; }
 
@@ -201,8 +170,7 @@ html, body {
   border-top: 3px solid #000; padding: 8px 10px;
   display: -webkit-box; display: -webkit-flex; display: flex;
   -webkit-align-items: center; align-items: center;
-  gap: 6px; background: #fff;
-  -webkit-flex-shrink: 0; flex-shrink: 0;
+  gap: 6px; background: #fff; -webkit-flex-shrink: 0; flex-shrink: 0;
 }
 .nav .btn { min-width: 86px; min-height: 46px; font-size: 12px; }
 #pi { -webkit-flex: 1; flex: 1; text-align: center; font-family: "Courier New", monospace; font-size: 11px; color: #555; letter-spacing: .06em; line-height: 1.4; }
@@ -215,7 +183,6 @@ html, body {
 <body>
 <div class="frame">
 
-  <!-- ══ SEARCH SCREEN ══ -->
   <div id="ss">
     <div class="hero">
       <div class="hero-sub">Welcome to</div>
@@ -223,7 +190,7 @@ html, body {
       <div class="sbar">
         <div style="position:relative;-webkit-flex:1;flex:1;display:-webkit-box;display:-webkit-flex;display:flex;">
           <input id="si" type="text" placeholder="what do you want to read?"
-            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
           <div id="sug"></div>
         </div>
         <button class="sbar-go" id="sb">&#8594;</button>
@@ -243,7 +210,6 @@ html, body {
     </div>
   </div>
 
-  <!-- ══ READER SCREEN ══ -->
   <div id="rs">
     <div class="tbar">
       <button class="btn" id="fd" style="min-width:40px;font-size:15px;">A&#8722;</button>
@@ -254,12 +220,10 @@ html, body {
       <span class="tb-pct" id="pp">0%</span>
       <button class="btn" id="back2" style="min-width:54px;font-size:11px;">&#8592; LIST</button>
     </div>
-
     <div id="page-area">
-      <div id="bl">[ Loading book... ]</div>
+      <div id="bl">[ Loading... ]</div>
       <div id="viewer"></div>
     </div>
-
     <div class="nav">
       <button class="btn" id="pv" disabled>&#9664; PREV</button>
       <span id="pi">&#8212; / &#8212;</span>
@@ -269,25 +233,28 @@ html, body {
 
 </div>
 <script>
-/*
-  Readever — ReKindle approach for Gutenberg
-  ──────────────────────────────────────────
-  ReKindle loads books as EPUBs via epub.js, not raw .txt files.
-  Gutenberg's CDN (gutenberg.org/cache/epub/) serves .epub files
-  with correct CORS headers — no proxy ever needed.
-
-  epub.js handles:
-    - Parsing and rendering the EPUB internally
-    - Pagination (page-by-page navigation)
-    - Font size changes
-    - Progress tracking (CFI locations)
-
-  We just wire up the UI around it.
-*/
 'use strict';
 
-var API      = 'https://gutendex.com/books/';
-var SAVE_KEY = 'readever_v3';
+/*
+  Network strategy — learned from diagnosing Kindle browser failures:
+
+  SEARCH (gutendex API):
+    gutendex.com sends Access-Control-Allow-Origin:* but some old Kindle
+    Webkit builds still block it when the page origin is file:// or http.
+    Fix: route search through allorigins /raw — it adds CORS headers and
+    just passes the JSON through unchanged. allorigins handles gutendex
+    responses fine (they're tiny JSON, never hit the size limit).
+
+  EPUB loading:
+    gutenberg.org/cache/epub/ CDN sends proper CORS headers on .epub files.
+    epub.js fetches and unzips them directly — no proxy needed at all.
+    This is exactly how ReKindle's epub reader works.
+*/
+
+var GUTENDEX  = 'https://gutendex.com/books/';
+/* Route ALL gutendex calls through allorigins to avoid Kindle CORS issues */
+var PROXY_API = 'https://api.allorigins.win/raw?url=';
+var SAVE_KEY  = 'readever_v3';
 
 function gid(id){ return document.getElementById(id); }
 
@@ -297,16 +264,16 @@ var rl=gid('rl'), ra=gid('ra'), rh=gid('rh'), em=gid('em');
 var bl=gid('bl'), pf=gid('pf'), pp=gid('pp');
 var pi=gid('pi'), pv=gid('pv'), nx=gid('nx');
 
-var book       = null;   /* epub.js Book instance */
-var rendition  = null;   /* epub.js Rendition instance */
-var bookId     = null;
-var fontSize   = 100;    /* percent */
-var debT       = null;
-var touchX     = 0;
+var epubBook  = null;
+var rendition = null;
+var bookId    = null;
+var fontSize  = 100;
+var debT      = null;
+var touchX    = 0;
 
 /* ── PROGRESS ── */
 function pLoad(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)||'{}'); }catch(e){ return {}; } }
-function pSave(bid, cfi){
+function pSave(bid,cfi){
   try{
     var d=pLoad(); d[bid]={cfi:cfi,t:Date.now()};
     var keys=Object.keys(d).sort(function(a,b){ return (d[b].t||0)-(d[a].t||0); });
@@ -316,274 +283,251 @@ function pSave(bid, cfi){
 }
 function pGet(bid){ try{ var d=pLoad(); return d[bid]?d[bid].cfi||null:null; }catch(e){ return null; } }
 
-/* ── XHR helper (search only) ── */
-function xhr(url, cb){
-  var x=new XMLHttpRequest();
-  x.open('GET',url,true);
-  x.timeout=15000;
-  x.onreadystatechange=function(){
-    if(x.readyState!==4) return;
-    cb((x.status===200||x.status===0)&&x.responseText?x.responseText:null);
+/* ── XHR — all search calls go via allorigins proxy ── */
+function apiGet(endpoint, cb){
+  var url = PROXY_API + encodeURIComponent(GUTENDEX + endpoint);
+  var x = new XMLHttpRequest();
+  x.open('GET', url, true);
+  x.timeout = 20000;
+  x.onreadystatechange = function(){
+    if(x.readyState !== 4) return;
+    var ok = (x.status === 200 || x.status === 0) && x.responseText && x.responseText.length > 2;
+    cb(ok ? x.responseText : null);
   };
-  x.onerror=function(){ cb(null); };
-  x.ontimeout=function(){ cb(null); };
+  x.onerror   = function(){ cb(null); };
+  x.ontimeout = function(){ cb(null); };
   x.send();
 }
 
 /* ── SEARCH ── */
-si.addEventListener('input',function(){
-  var q=si.value.trim(); clearTimeout(debT);
-  if(q.length<2){ hideSug(); return; }
-  debT=setTimeout(function(){ suggest(q); },400);
+si.addEventListener('input', function(){
+  var q = si.value.trim(); clearTimeout(debT);
+  if(q.length < 2){ hideSug(); return; }
+  debT = setTimeout(function(){ suggest(q); }, 400);
 });
-si.addEventListener('keydown',function(e){
-  if((e.key||'')==='Enter'||e.keyCode===13){ hideSug(); doSearch(); }
+si.addEventListener('keydown', function(e){
+  if((e.key||'') === 'Enter' || e.keyCode === 13){ hideSug(); doSearch(); }
 });
-gid('sb').addEventListener('click',function(){ hideSug(); doSearch(); });
+gid('sb').addEventListener('click', function(){ hideSug(); doSearch(); });
 
-function hideSug(){ sug.className=''; }
+function hideSug(){ sug.className = ''; }
 
 function suggest(q){
-  xhr(API+'?search='+encodeURIComponent(q)+'&page=1',function(txt){
+  apiGet('?search=' + encodeURIComponent(q) + '&page=1', function(txt){
     if(!txt){ hideSug(); return; }
     try{
-      var d=JSON.parse(txt), items=(d.results||[]).slice(0,5);
+      var d = JSON.parse(txt);
+      var items = (d.results||[]).slice(0,5);
       if(!items.length){ hideSug(); return; }
-      sug.innerHTML='';
-      for(var i=0;i<items.length;i++){
+      sug.innerHTML = '';
+      for(var i=0; i<items.length; i++){
         (function(b){
-          var el=document.createElement('div');
-          el.className='si';
-          var a=b.authors&&b.authors[0]?b.authors[0].name:'';
-          el.innerHTML='<span>'+esc(b.title)+'</span><span class="si-auth">'+esc(a)+'</span>';
-          el.onclick=function(){ si.value=b.title; hideSug(); openBook(b); };
+          var el = document.createElement('div');
+          el.className = 'si';
+          var a = b.authors && b.authors[0] ? b.authors[0].name : '';
+          el.innerHTML = '<span>'+esc(b.title)+'</span><span class="si-auth">'+esc(a)+'</span>';
+          el.onclick = function(){ si.value = b.title; hideSug(); openBook(b); };
           sug.appendChild(el);
         })(items[i]);
       }
-      sug.className='open';
+      sug.className = 'open';
     }catch(e){ hideSug(); }
   });
 }
 
 function doSearch(){
-  var q=si.value.trim(); if(!q) return;
-  rl.innerHTML=''; em.className='empty'; ra.className='rarea';
-  ldmsg.textContent='Searching\u2026'; ldEl.className='ld on'; smsg.textContent='';
+  var q = si.value.trim(); if(!q) return;
+  rl.innerHTML = ''; em.className = 'empty'; ra.className = 'rarea';
+  ldmsg.textContent = 'Searching\u2026'; ldEl.className = 'ld on'; smsg.textContent = '';
 
-  xhr(API+'?search='+encodeURIComponent(q)+'&page=1',function(txt){
-    ldEl.className='ld'; ra.className='rarea on';
-    if(!txt){ smsg.textContent='Could not reach server. Check connection.'; return; }
+  apiGet('?search=' + encodeURIComponent(q) + '&page=1', function(txt){
+    ldEl.className = 'ld'; ra.className = 'rarea on';
+    if(!txt){
+      smsg.textContent = 'Search failed. Check your connection and try again.';
+      return;
+    }
     try{
-      var d=JSON.parse(txt), books=d.results||[];
-      if(!books.length){ em.className='empty on'; return; }
-      rh.textContent=books.length+' result'+(books.length>1?'s':'')+' found';
-      var prog=pLoad(), frag=document.createDocumentFragment();
-      for(var i=0;i<books.length;i++){
+      var d = JSON.parse(txt);
+      var books = d.results || [];
+      if(!books.length){ em.className = 'empty on'; return; }
+      rh.textContent = books.length + ' result' + (books.length>1?'s':'') + ' found';
+      var prog = pLoad();
+      var frag = document.createDocumentFragment();
+      for(var i=0; i<books.length; i++){
         (function(b){
-          var el=document.createElement('div'); el.className='ri';
-          var a=b.authors&&b.authors.length?b.authors.map(function(x){return x.name;}).join(', '):'Unknown';
-          var bid=String(b.id), saved=!!(prog[bid]&&prog[bid].cfi);
-          el.innerHTML='<div class="ri-t">'+esc(b.title)+'</div>'+
+          var el = document.createElement('div'); el.className = 'ri';
+          var a = b.authors && b.authors.length
+            ? b.authors.map(function(x){ return x.name; }).join(', ')
+            : 'Unknown';
+          var bid = String(b.id);
+          var saved = !!(prog[bid] && prog[bid].cfi);
+          el.innerHTML =
+            '<div class="ri-t">'+esc(b.title)+'</div>'+
             '<div class="ri-m">'+esc(a)+' &middot; '+((b.download_count||0).toLocaleString())+' reads</div>'+
-            (saved?'<span class="ri-badge">Resume</span>':'');
-          el.onclick=function(){ openBook(b); };
+            (saved ? '<span class="ri-badge">Resume</span>' : '');
+          el.onclick = function(){ openBook(b); };
           frag.appendChild(el);
         })(books[i]);
       }
       rl.appendChild(frag);
-    }catch(e){ smsg.textContent='Error reading results.'; }
-  });
-}
-
-/* ── OPEN BOOK ── */
-/*
-  epub.js Book URL strategy — same logic ReKindle uses:
-
-  Gutenberg CDN epub URL pattern (always available, CORS-enabled):
-    https://www.gutenberg.org/cache/epub/{id}/pg{id}-images.epub
-    https://www.gutenberg.org/cache/epub/{id}/pg{id}.epub
-
-  Also check formats object from gutendex for epub mime type as first choice.
-  epub.js fetches and unzips the file itself using JSZip.
-  No proxy. No raw text. No CORS issues.
-*/
-function openBook(b){
-  bookId=String(b.id);
-
-  /* Destroy any existing epub.js instance */
-  if(rendition){ try{ rendition.destroy(); }catch(e){} rendition=null; }
-  if(book){ try{ book.destroy(); }catch(e){} book=null; }
-
-  /* Reset UI */
-  bl.className=''; /* show loading overlay */
-  bl.textContent='[ Loading book\u2026 ]';
-  pv.disabled=true; nx.disabled=true;
-  pi.textContent='\u2014 / \u2014';
-  pf.style.width='0%'; pp.textContent='0%';
-  gid('viewer').innerHTML='';
-
-  ss.className='off'; rs.className='on';
-
-  /* Build epub URL list, prefer formats object, fallback to known CDN patterns */
-  var epubUrl = bestEpubUrl(b.formats);
-  var cdnUrl1 = 'https://www.gutenberg.org/cache/epub/'+bookId+'/pg'+bookId+'-images.epub';
-  var cdnUrl2 = 'https://www.gutenberg.org/cache/epub/'+bookId+'/pg'+bookId+'.epub';
-
-  /* Use CDN url as primary if formats didn't give us one, or use formats url */
-  var primaryUrl = epubUrl || cdnUrl1;
-
-  loadEpub(primaryUrl, function(ok){
-    if(!ok){
-      /* Try alternate CDN pattern */
-      loadEpub(cdnUrl2, function(ok2){
-        if(!ok2) showErr('Could not load book.\nThe EPUB file is unavailable.\nTry a different book.');
-      });
+    }catch(e){
+      smsg.textContent = 'Error reading results.';
     }
   });
 }
 
-function bestEpubUrl(f){
-  /* Prefer epub with images, then plain epub */
-  var mimes=[
-    'application/epub+zip',
-    'application/epub'
-  ];
-  for(var i=0;i<mimes.length;i++){
-    if(f[mimes[i]]) return f[mimes[i]];
-  }
-  /* Scan for any epub key */
-  var keys=Object.keys(f);
-  for(var j=0;j<keys.length;j++){
-    if(keys[j].indexOf('epub')!==-1) return f[keys[j]];
-  }
+/* ── OPEN BOOK ── */
+function openBook(b){
+  bookId = String(b.id);
+
+  if(rendition){ try{ rendition.destroy(); }catch(e){} rendition=null; }
+  if(epubBook){  try{ epubBook.destroy();  }catch(e){} epubBook=null; }
+
+  bl.className = '';
+  bl.textContent = '[ Loading\u2026 ]';
+  pv.disabled = true; nx.disabled = true;
+  pi.textContent = '\u2014 / \u2014';
+  pf.style.width = '0%'; pp.textContent = '0%';
+  gid('viewer').innerHTML = '';
+
+  ss.className = 'off'; rs.className = 'on';
+
+  /*
+    Epub URL priority — same pattern as ReKindle:
+    1. URL from gutendex formats object (epub+zip mime)
+    2. Gutenberg CDN canonical with images: /cache/epub/{id}/pg{id}-images.epub
+    3. Gutenberg CDN plain:                 /cache/epub/{id}/pg{id}.epub
+    Gutenberg CDN sends Access-Control-Allow-Origin: * on epub files,
+    so epub.js can fetch them directly with no proxy.
+  */
+  var fmtUrl = getEpubUrl(b.formats);
+  var cdn1   = 'https://www.gutenberg.org/cache/epub/'+bookId+'/pg'+bookId+'-images.epub';
+  var cdn2   = 'https://www.gutenberg.org/cache/epub/'+bookId+'/pg'+bookId+'.epub';
+
+  var urls = [];
+  if(fmtUrl) urls.push(fmtUrl);
+  urls.push(cdn1);
+  urls.push(cdn2);
+  /* dedupe */
+  var seen={}, uniq=[];
+  for(var i=0;i<urls.length;i++){ if(!seen[urls[i]]){ seen[urls[i]]=1; uniq.push(urls[i]); } }
+
+  tryEpubUrls(uniq, 0);
+}
+
+function getEpubUrl(f){
+  var epubMimes = ['application/epub+zip','application/epub'];
+  for(var i=0;i<epubMimes.length;i++){ if(f[epubMimes[i]]) return f[epubMimes[i]]; }
+  var keys = Object.keys(f);
+  for(var j=0;j<keys.length;j++){ if(keys[j].indexOf('epub')!==-1) return f[keys[j]]; }
   return null;
+}
+
+function tryEpubUrls(urls, idx){
+  if(idx >= urls.length){
+    showErr('Could not load this book.\nTry a different title.');
+    return;
+  }
+  bl.textContent = '[ Downloading\u2026 ]';
+  loadEpub(urls[idx], function(ok){
+    if(!ok) tryEpubUrls(urls, idx+1);
+  });
 }
 
 function loadEpub(url, cb){
   try{
-    bl.textContent='[ Downloading\u2026 ]';
+    epubBook = ePub(url);
 
-    book = ePub(url);
+    epubBook.ready.then(function(){
+      bl.textContent = '[ Rendering\u2026 ]';
 
-    book.ready.then(function(){
-      bl.textContent='[ Rendering\u2026 ]';
-
-      /* epub.js Rendition — paginated mode */
-      rendition = book.renderTo('viewer', {
-        method:   'paginated',
-        width:    '100%',
-        height:   '100%',
-        spread:   'none',
-        flow:     'paginated'
+      rendition = epubBook.renderTo('viewer', {
+        method: 'paginated',
+        width:  '100%',
+        height: '100%',
+        spread: 'none',
+        flow:   'paginated'
       });
 
-      /* Apply font size */
-      rendition.themes.fontSize(fontSize+'%');
-
-      /* Style the epub content to match our aesthetic */
-      rendition.themes.register('readever', {
+      rendition.themes.fontSize(fontSize + '%');
+      rendition.themes.register('rv', {
         'body': {
-          'font-family': 'Georgia, "Times New Roman", serif !important',
+          'font-family': 'Georgia,"Times New Roman",serif !important',
           'line-height': '1.8 !important',
           'color':       '#000 !important',
           'background':  '#fff !important'
         }
       });
-      rendition.themes.select('readever');
+      rendition.themes.select('rv');
 
-      /* Restore saved position or start from beginning */
       var savedCfi = pGet(bookId);
-      var displayPromise = savedCfi
-        ? rendition.display(savedCfi)
-        : rendition.display();
+      var p = savedCfi ? rendition.display(savedCfi) : rendition.display();
 
-      displayPromise.then(function(){
-        bl.className='off';
-        pv.disabled=false; nx.disabled=false;
-        updateProgress();
+      p.then(function(){
+        bl.className = 'off';
+        pv.disabled = false; nx.disabled = false;
+        updatePct();
         cb(true);
       }).catch(function(){
-        /* CFI might be stale — start from beginning */
         rendition.display().then(function(){
-          bl.className='off';
-          pv.disabled=false; nx.disabled=false;
-          updateProgress();
+          bl.className = 'off';
+          pv.disabled = false; nx.disabled = false;
+          updatePct();
           cb(true);
-        });
+        }).catch(function(){ cb(false); });
       });
 
-      /* Track location changes */
-      rendition.on('relocated', function(location){
-        updateProgress(location);
-        /* Save CFI for resume */
-        if(location && location.start && location.start.cfi){
-          pSave(bookId, location.start.cfi);
-        }
-        pv.disabled = location.atStart;
-        nx.disabled = location.atEnd;
-
-        /* E-ink flash every ~15 pages */
+      rendition.on('relocated', function(loc){
+        updatePct(loc);
+        if(loc && loc.start && loc.start.cfi) pSave(bookId, loc.start.cfi);
+        if(loc){ pv.disabled = !!loc.atStart; nx.disabled = !!loc.atEnd; }
         einkFlash();
       });
 
-      /* Forward key events from epub iframe to our handler */
-      rendition.on('keydown', function(e){
-        handleKey(e.key || '', e.keyCode || 0);
-      });
+      rendition.on('keydown', function(e){ handleKey(e.key||'', e.keyCode||0); });
 
-    }).catch(function(err){
-      cb(false);
-    });
+    }).catch(function(){ cb(false); });
 
-    book.on('openFailed', function(){
-      cb(false);
-    });
+    epubBook.on('openFailed', function(){ cb(false); });
 
-  }catch(e){
-    cb(false);
-  }
+  }catch(e){ cb(false); }
 }
 
-function updateProgress(location){
+function updatePct(loc){
   try{
     var pct = 0;
-    if(book && book.locations && book.locations.percentageFromCfi){
-      if(location && location.start && location.start.cfi){
-        pct = Math.round(book.locations.percentageFromCfi(location.start.cfi) * 100);
-      }
+    if(epubBook && epubBook.locations && loc && loc.start && loc.start.cfi){
+      pct = Math.round((epubBook.locations.percentageFromCfi(loc.start.cfi)||0) * 100);
     }
-    pf.style.width = pct+'%';
-    pp.textContent = pct+'%';
-    if(location){
-      var cur = location.start && location.start.displayed ? location.start.displayed.page : '?';
-      var tot = location.start && location.start.displayed ? location.start.displayed.total : '?';
-      pi.textContent = 'Page '+cur+' of '+tot;
+    pf.style.width = pct + '%';
+    pp.textContent = pct + '%';
+    if(loc && loc.start && loc.start.displayed){
+      pi.textContent = 'Page ' + loc.start.displayed.page + ' of ' + loc.start.displayed.total;
     }
   }catch(e){}
 }
 
 /* ── NAVIGATION ── */
-pv.onclick=function(){ if(rendition) rendition.prev(); };
-nx.onclick=function(){ if(rendition) rendition.next(); };
+pv.onclick = function(){ if(rendition) rendition.prev(); };
+nx.onclick = function(){ if(rendition) rendition.next(); };
 
-gid('back2').onclick=function(){
+gid('back2').onclick = function(){
   if(rendition){ try{ rendition.destroy(); }catch(e){} rendition=null; }
-  if(book){ try{ book.destroy(); }catch(e){} book=null; }
+  if(epubBook){  try{ epubBook.destroy();  }catch(e){} epubBook=null; }
   rs.className=''; ss.className='';
 };
 
-/* Touch swipe — on the page-area div (epub is in an iframe, so we capture on wrapper) */
-gid('page-area').addEventListener('touchstart',function(ev){
-  touchX=ev.changedTouches[0].clientX;
-},{passive:true});
-gid('page-area').addEventListener('touchend',function(ev){
-  var dx=ev.changedTouches[0].clientX-touchX;
-  if(dx<-50&&rendition) rendition.next();
-  if(dx>50&&rendition)  rendition.prev();
-},{passive:true});
+gid('page-area').addEventListener('touchstart', function(ev){
+  touchX = ev.changedTouches[0].clientX;
+}, {passive:true});
+gid('page-area').addEventListener('touchend', function(ev){
+  var dx = ev.changedTouches[0].clientX - touchX;
+  if(dx < -50 && rendition) rendition.next();
+  if(dx >  50 && rendition) rendition.prev();
+}, {passive:true});
 
-document.addEventListener('keydown',function(e){
-  if(rs.className.indexOf('on')===-1) return;
+document.addEventListener('keydown', function(e){
+  if(rs.className.indexOf('on') === -1) return;
   handleKey(e.key||'', e.keyCode||0);
 });
 
@@ -593,47 +537,35 @@ function handleKey(key, code){
 }
 
 /* ── FONT SIZE ── */
-gid('fu').onclick=function(){
-  if(fontSize<180){ fontSize+=10; applyFontSize(); }
-};
-gid('fd').onclick=function(){
-  if(fontSize>70){ fontSize-=10; applyFontSize(); }
-};
-function applyFontSize(){
-  if(rendition) rendition.themes.fontSize(fontSize+'%');
-}
+gid('fu').onclick = function(){ if(fontSize<180){ fontSize+=10; if(rendition) rendition.themes.fontSize(fontSize+'%'); } };
+gid('fd').onclick = function(){ if(fontSize>70){  fontSize-=10; if(rendition) rendition.themes.fontSize(fontSize+'%'); } };
 
 /* ── E-INK FLASH ── */
-var lastFlash=0;
+var lastFlash = 0;
 function einkFlash(){
-  /* Throttle — at most once every 30 seconds */
-  var now=Date.now();
-  if(now-lastFlash<30000) return;
-  lastFlash=now;
-  try{ var m=localStorage.getItem('rekindle_display_mode')||''; if(m==='screen') return; }catch(e){}
-  var f=document.createElement('div');
-  f.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;pointer-events:none;';
+  var now = Date.now();
+  if(now - lastFlash < 30000) return;
+  lastFlash = now;
+  try{ if(localStorage.getItem('rekindle_display_mode')==='screen') return; }catch(e){}
+  var f = document.createElement('div');
+  f.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;pointer-events:none;';
   document.body.appendChild(f);
   void f.offsetWidth;
-  setTimeout(function(){ if(f.parentNode) f.parentNode.removeChild(f); },400);
+  setTimeout(function(){ if(f.parentNode) f.parentNode.removeChild(f); }, 400);
 }
 
 /* ── ERROR ── */
 function showErr(msg){
-  bl.className='';
-  bl.innerHTML=msg.replace(/\n/g,'<br>');
+  bl.className = '';
+  bl.innerHTML = msg.replace(/\n/g,'<br>');
 }
 
-/* ── CLOSE SUGGESTIONS ── */
-document.addEventListener('click',function(ev){
-  if(!ev.target.closest||!ev.target.closest('.sbar')) hideSug();
+document.addEventListener('click', function(ev){
+  if(!ev.target.closest || !ev.target.closest('.sbar')) hideSug();
 });
 
-/* ── UTILS ── */
 function esc(s){
-  return String(s).replace(/[&<"]/g,function(m){
-    return{'&':'&amp;','<':'&lt;','"':'&quot;'}[m];
-  });
+  return String(s).replace(/[&<"]/g, function(m){ return {'&':'&amp;','<':'&lt;','"':'&quot;'}[m]; });
 }
 </script>
 </body>
